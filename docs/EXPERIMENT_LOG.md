@@ -13,6 +13,8 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 24 Sept | ppo_baseline (rerun) | ppo_baseline.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 8 min | identical; change 0.675, unique 5911 |
 | 24 Sept | dqn_imp1_explore | dqn_imp1_explore.yaml | dev | 0,1,2 | 0.112 ± 0.177 | 2.00 ± 1.00 | 24 min | change 0.742, unique 6577 |
 | 24 Sept | ppo_imp1_explore | ppo_imp1_explore.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 17 min | change 0.712, unique 6356 |
+| 24 Sept | dqn_imp2_clockmask | dqn_imp2_clockmask.yaml | dev | 0,1,2 | 0.113 ± 0.176 | 2.67 ± 0.58 | 26 min | change 0.741, unique 6982; new: r11l s1@811, sp80 s2@587 |
+| 24 Sept | ppo_imp2_clockmask | ppo_imp2_clockmask.yaml | dev | 0,1,2 | 0.003 ± 0.003 | 1.67 ± 0.58 | 9 min | change 0.711, unique 6678; new: sp80 s0@616 |
 
 Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in any run.
 `change` = share of non-reset actions that changed the frame (mean over games); `unique` = distinct frames per seed
@@ -104,13 +106,44 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
 - **Check first (cheap):** rerun `scripts/diagnose_changes.py`. For tick games, `clock_px` should be > 0,
   `change_rate_clockmasked` should fall well below 1.0 and `unique_frames_clockmasked` should shrink. For sprite games
   (ls20, r11l), values should stay close to the unmasked ones.
+- **Check result (24 Sept, random policy):** masked change rate fell from ≈1.0 to 0.16–0.25 in tick games
+  (s5i5 0.19, sp80 0.18, su15 0.16, tn36 0.22, ka59 0.25, cn04 0.18) and to 0.51 in tu93; sprite games were almost
+  untouched (ls20 1.00, re86 1.00, wa30 0.83); r11l fell to 0.60; the rare-change games were unchanged (sb26, sc25 and sk48
+  had 0 masked pixels). Artefact: the mask grows during play, so one screen can hash differently before and after a pixel
+  is masked. This inflates masked distinct-frame counts slightly (ls20 277→294, tn36 114→126) and splits some novelty counts.
 - **Evaluation:** 3 seeds each for DQN and PPO against improvement 1. Report change rate and distinct frames masked and
   unmasked, levels, score, and per-game results for tick games vs. others.
-- **Result:**
+- **Result, DQN (24 Sept): +2 levels over improvement 1, both late in a game; still no level 2.**
+  - Levels 2.00 ± 1.00 → 2.67 ± 0.58 (per seed 3, 2, 3); random and baseline 1.67.
+  - Common random numbers matter here. All configs share seeds, and DQN's ε is ≈1 early in each game, so the first
+    actions are near-identical across versions. Completions at the same action index in several versions are that shared
+    early luck, not an improvement effect: r11l seed 0 at action 32 and sp80 seed 0 at 54 (baseline, imp1, imp2), and lp85
+    seeds 1–2 at 94/86 (imp1, imp2). Those two seed-0 completions also produce almost all of DQN's official score in every
+    version, which is why the score is flat (0.108 → 0.112 → 0.113).
+  - The completions unique to improvement 2 are **r11l seed 1 at action 811** and **sp80 seed 2 at 587**, both late
+    (ε ≈ 0.25–0.45), when learned values drive most actions. sp80 is a tick game, the hypothesis's target case.
+  - Exploration gains sit in tick games, as predicted (distinct frames, imp1 → imp2): s5i5 205 → 300, sp80 337 → 495,
+    su15 191 → 355, tn36 344 → 363. Rare-change and sprite games are unchanged (sb26 296 → 278, sc25 414 → 417,
+    ls20 830 → 825).
+  - Total distinct frames 6577 → 6982 (+6%). Unmasked change rate unchanged (0.741), as expected.
+  - With 3 seeds and 2 extra completions, the gain is suggestive, not established.
+- **Result, PPO (24 Sept): one extra late completion.**
+  - Levels 1.33 → 1.67. r11l (174/284/417) and lp85 seed 2 (246) repeat at the same actions in every PPO version, so
+    they come from the shared early action stream. The new completion is **sp80 seed 0 at action 616**, again a tick game.
+  - Tick-game exploration rose (sp80 308 → 422, tn36 339 → 377, tu93 421 → 515); total distinct frames 6356 → 6678.
+    Score unchanged (0.003).
+  - PPO remains at the random-policy level on levels; DQN benefits more from both exploration improvements.
+- **Analysis rule adopted from here:** a completion counts as evidence for a change only if it does not occur at the same
+  action index in the previous version with the same seed. Report early shared completions separately.
+- **Open problem for any next step:** no run in any configuration has completed level 2. Every success is one level-1
+  completion, and each game starts from freshly initialised weights, so each game relearns from zero which actions matter.
 
-### Improvement 3 candidate (`*_imp3_memory.yaml`)
-Frame-stack memory on top of improvement 2, justified if improvement 2 shows agents reaching new states without converting
-them into level progress within a life. Decide after improvement 2 results.
+### Improvement 3 — options (decide before running)
+- **Memory (`*_imp3_memory.yaml`, 4-frame stack):** addresses partial observability within a life. Current evidence does
+  not point to this as the bottleneck.
+- **Cross-game pretraining (`scripts/pretrain.py` + `init_checkpoint`):** addresses the observed problem that every game
+  starts from scratch. Weights are pretrained sequentially on dev games, then evaluated only on held-out games, with online
+  learning continuing. This is also the brief's generalisation question. It must never be scored on dev games.
 
 ## Failure cases to show in the report
 | Run | Seed | Game | What happened | Evidence |

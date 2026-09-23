@@ -1,6 +1,8 @@
 run_name,split,seeds,score_mean,score_std,score_ci95,levels_mean,levels_std,wins_mean,actions_mean,wall_time_s_mean,change_rate_mean,unique_states_mean
 dqn_baseline,dev,3,0.108,0.18,0.204,1.667,0.577,0.0,15000.0,1423.643,0.671,5738.0
 dqn_imp1_explore,dev,3,0.112,0.177,0.2,2.0,1.0,0.0,15000.0,1410.517,0.742,6577.0
+dqn_imp2_clockmask,dev,3,0.113,0.176,0.199,2.667,0.577,0.0,15000.0,1548.007,0.741,6981.667
 ppo_baseline,dev,3,0.003,0.002,0.002,1.333,0.577,0.0,15000.0,494.387,0.675,5911.333
 ppo_imp1_explore,dev,3,0.003,0.002,0.002,1.333,0.577,0.0,15000.0,1031.96,0.712,6356.0
+ppo_imp2_clockmask,dev,3,0.003,0.003,0.003,1.667,0.577,0.0,15000.0,546.757,0.711,6677.667
 random,dev,3,0.01,0.011,0.012,1.667,0.577,0.0,15000.0,55.447,0.676,5922.333
