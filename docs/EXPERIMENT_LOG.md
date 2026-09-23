@@ -8,8 +8,16 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 23 Sept | random | random.yaml | dev | 0,1,2 | 0.010 ± 0.011 | 1.67 ± 0.58 | 50 s | sanity-check floor |
 | 23 Sept | dqn_baseline | dqn_baseline.yaml | dev | 0,1,2 | 0.108 ± 0.180 | 1.67 ± 0.58 | 34 min | mean driven by seed 0 |
 | 23 Sept | ppo_baseline | ppo_baseline.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 13 min | |
+| 24 Sept | random (rerun) | random.yaml | dev | 0,1,2 | 0.010 ± 0.011 | 1.67 ± 0.58 | 55 s | identical to 23 Sept; change 0.676, unique 5922 |
+| 24 Sept | dqn_baseline (rerun) | dqn_baseline.yaml | dev | 0,1,2 | 0.108 ± 0.180 | 1.67 ± 0.58 | 24 min | identical; change 0.671, unique 5738 |
+| 24 Sept | ppo_baseline (rerun) | ppo_baseline.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 8 min | identical; change 0.675, unique 5911 |
+| 24 Sept | dqn_imp1_explore | dqn_imp1_explore.yaml | dev | 0,1,2 | 0.112 ± 0.177 | 2.00 ± 1.00 | 24 min | change 0.742, unique 6577 |
+| 24 Sept | ppo_imp1_explore | ppo_imp1_explore.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 17 min | change 0.712, unique 6356 |
 
 Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in any run.
+`change` = share of non-reset actions that changed the frame (mean over games); `unique` = distinct frames per seed
+(summed over games). Reruns reproduced every level, score and game-over count exactly: CPU runs are deterministic
+under fixed seeds. Wall time varies ±40% between runs on the same laptop, so compare it only within one session.
 
 ## Baseline findings (23 Sept)
 
@@ -43,7 +51,16 @@ Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in
   Shaping is training-only; scores stay official.
 - **Evidence to check:** `change_rate` and `unique_states` (logged from now on) against the baseline; levels and score
   against baseline and random, 3 seeds.
-- **Result:**
+- **Result (24 Sept): the mechanism works where it can, but it does not reach levels.**
+  - (a) Change rate rose from 0.671 to 0.742. The gain is concentrated in games where most actions are no-ops:
+    sb26 0.17→0.51, sc25 0.25→0.49, sk48 0.08→0.21, su15 0.64→0.93.
+  - (b) Distinct frames rose 15% (5738→6577), from below random (5922) to above it; sb26 96→296, sc25 231→414, sk48 68→178.
+  - The repetition failure is fixed: r11l game-overs fell from 75.7 to 26.3 per 1000 actions (random 46).
+  - (c) Not supported: levels 1.67→2.00 ± 1.00 and score 0.108→0.112 are within noise. The extra level is lp85 in
+    seeds 1–2 (86 and 94 actions), which is suggestive but not established with 3 seeds.
+  - In 7 games the change rate is already ≈1.0 for every agent, including random, whose actions are mostly clicks on
+    empty cells (ls20, r11l, s5i5, sp80, tn36, tu93, re86), and distinct frames are close to the action count
+    (e.g. ls20 ≈ 830 of 1000). There, both bonuses are nearly constant and carry no information.
 
 ### PPO — improvement 1 (`ppo_imp1_explore.yaml`)
 - **Observed limitation:** all-zero advantages in 12/15 games leave the policy uniform (entropy ≈ 4.25, clip fraction ≈ 0).
@@ -52,19 +69,27 @@ Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in
   per-step bonus over the rollout, while DQN learns it one bootstrapped transition at a time.
 - **Intervention:** identical shaping to DQN improvement 1, evaluated separately.
 - **Evidence to check:** entropy and clip-fraction traces, `change_rate`, `unique_states`, levels and score, 3 seeds.
-- **Result:**
+- **Result (24 Sept): smaller effect than DQN, and no gain in levels.**
+  - Change rate 0.675→0.712; distinct frames 5911→6356 (+7.5%, above random). Gains again sit in sb26
+    (0.12→0.23), sc25 (0.13→0.29) and sk48 (0.07→0.24).
+  - The policy now moves where the bonus is informative: seed 0 entropy in sb26/sc25/sk48 fell from 4.18–4.23 to
+    3.95–3.97 (max ln 70 = 4.25), and clip fraction rose to 0.18–0.35. Elsewhere it stays near uniform
+    (games restricted to 4–5 actions show entropy ≈ ln 4 = 1.39 or ln 5 = 1.61 in both versions).
+  - Levels (1.33) and score (0.003) are unchanged.
+  - The hypothesis that PPO would gain more than DQN is rejected: DQN moved more on every exploration metric.
 
-### DQN — improvement 2
-- Observed limitation:
-- Hypothesis:
-- Intervention:
-- Result:
-
-### PPO — improvement 2
-- Observed limitation:
-- Hypothesis:
-- Intervention:
-- Result:
+### Improvement 2 — decision pending a diagnostic (both algorithms)
+- **Observed limitation (both):** in 7 dev games every action changes the frame, even random clicks on empty cells, and
+  nearly every frame is new. Game-overs there occur at identical counts for all agents. The likely cause is an
+  on-screen clock or move counter. If so, a frame-hash novelty count and a changed/unchanged bonus cannot tell a
+  meaningful action from a wasted one, which explains why improvement 1 helped only in no-op-heavy games.
+- **Check first:** `scripts/diagnose_changes.py` (random policy, dev games only) measures how many pixels change per step,
+  where, and how many distinct states remain under a coarse 8×8 abstraction.
+- **If a HUD/clock is confirmed:** improvement 2 = clock-invariant exploration. Novelty and change are computed on the
+  frame with volatile pixels removed or coarsened, so the bonus reflects what the action did. It is evaluated
+  separately for DQN and PPO, and frame-stack memory moves to improvement 3 / ablation.
+- **If not confirmed:** keep frame-stack memory (`*_imp2_memory.yaml`) as planned, justified by the fixed-clock lives:
+  information must carry across frames within a life.
 
 ## Failure cases to show in the report
 | Run | Seed | Game | What happened | Evidence |
