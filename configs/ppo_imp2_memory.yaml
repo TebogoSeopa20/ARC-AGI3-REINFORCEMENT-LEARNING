@@ -1,8 +1,0 @@
-# Improvement 2: short-horizon memory (4-frame stack) on top of improvement 1.
-inherit: base.yaml
-run_name: ppo_imp2_memory
-algo: ppo
-change_bonus: 0.05
-novelty_bonus: 0.1
-game_over_penalty: 0.5
-frame_stack: 4

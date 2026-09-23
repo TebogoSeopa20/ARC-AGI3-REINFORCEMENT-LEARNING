@@ -36,6 +36,26 @@ def test_every_config_parses():
 
 
 def test_ablation_differs_by_one_component():
-    imp2 = Config.from_yaml(ROOT / "configs/dqn_imp2_memory.yaml")
-    abl = Config.from_yaml(ROOT / "configs/ablations/dqn_imp2_no_novelty.yaml")
-    assert abl.frame_stack == imp2.frame_stack and abl.novelty_bonus == 0 and imp2.novelty_bonus > 0
+    final = Config.from_yaml(ROOT / "configs/dqn_imp3_memory.yaml")
+    assert final.clock_mask and final.frame_stack == 4 and final.novelty_bonus > 0
+    abl = Config.from_yaml(ROOT / "configs/ablations/dqn_final_no_clockmask.yaml")
+    assert not abl.clock_mask and abl.frame_stack == final.frame_stack and abl.novelty_bonus == final.novelty_bonus
+
+
+def test_clock_mask_ignores_counter_but_not_movement():
+    import numpy as np
+
+    from arcrl.agents.exploration import ClockMask
+
+    cm = ClockMask()
+    for life in range(2):
+        g = np.zeros((64, 64), np.uint8)
+        g[0, :] = 5
+        for t in range(10):
+            nxt = g.copy()
+            nxt[0, t] = 9
+            nxt[30:32, :] = 0
+            nxt[30:32, t:t + 2] = 3
+            cm.update(g, nxt)
+            g = nxt
+    assert cm.mask[0, :10].all() and not cm.mask[30:32, :9].any()

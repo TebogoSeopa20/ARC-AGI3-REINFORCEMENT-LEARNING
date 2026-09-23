@@ -41,6 +41,7 @@ class Config:
     game_over_penalty: float = 0.0
     change_bonus: float = 0.0
     novelty_bonus: float = 0.0
+    clock_mask: bool = False
 
     # Shared learner hparams
     gamma: float = 0.95

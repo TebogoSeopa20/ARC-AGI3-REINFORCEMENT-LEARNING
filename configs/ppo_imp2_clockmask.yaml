@@ -1,0 +1,8 @@
+# Improvement 2: clock-invariant exploration. Novelty and change bonus ignore clock-like pixels (ClockMask).
+inherit: base.yaml
+run_name: ppo_imp2_clockmask
+algo: ppo
+change_bonus: 0.05
+novelty_bonus: 0.1
+game_over_penalty: 0.5
+clock_mask: true

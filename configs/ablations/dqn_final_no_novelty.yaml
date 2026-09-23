@@ -1,0 +1,4 @@
+# Ablation: final candidate (dqn_imp3_memory) without the novelty term.
+inherit: ../dqn_imp3_memory.yaml
+run_name: dqn_abl_no_novelty
+novelty_bonus: 0.0

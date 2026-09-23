@@ -12,6 +12,7 @@ import _common
 import numpy as np
 import pandas as pd
 
+from arcrl.agents.exploration import ClockMask
 from arcrl.env.actions import ActionSpace
 from arcrl.env.obs import Obs, grid_hash
 from arcrl.utils import Config, load_split
@@ -32,6 +33,7 @@ def run_game(arc, gid: str, steps: int, rng: np.random.Generator) -> tuple[dict,
     obs = Obs.from_frame_data(env.observation_space)
     freq = np.zeros((64, 64))
     n_changed, click_changed, hashes, coarse_states = [], [], set(), set()
+    clock, masked_hashes, masked_changed = ClockMask(), set(), []
     moves = 0
     for _ in range(steps):
         if obs.state in ("GAME_OVER", "NOT_PLAYED"):
@@ -48,9 +50,12 @@ def run_game(arc, gid: str, steps: int, rng: np.random.Generator) -> tuple[dict,
             n_changed.append(int(d.sum()))
             if ga is GameAction.ACTION6:
                 click_changed.append(int(d.sum()))
+            clock.update(obs.grid, new.grid)
+            masked_changed.append(int((d & ~clock.mask).sum()))
             moves += 1
         hashes.add(grid_hash(new.grid))
         coarse_states.add(coarse(new.grid))
+        masked_hashes.add(grid_hash(clock.apply(new.grid)))
         obs = new
     n = np.asarray(n_changed) if n_changed else np.zeros(1)
     f = freq / max(1, moves)
@@ -67,6 +72,9 @@ def run_game(arc, gid: str, steps: int, rng: np.random.Generator) -> tuple[dict,
         "rows_with_hot_px": sorted(set(np.nonzero(f > 0.5)[0].tolist()))[:12],
         "unique_frames": len(hashes),
         "unique_coarse8": len(coarse_states),
+        "clock_px": int(clock.mask.sum()),
+        "change_rate_clockmasked": round(float((np.asarray(masked_changed) > 0).mean()), 3) if masked_changed else 0.0,
+        "unique_frames_clockmasked": len(masked_hashes),
     }
     return row, f
 

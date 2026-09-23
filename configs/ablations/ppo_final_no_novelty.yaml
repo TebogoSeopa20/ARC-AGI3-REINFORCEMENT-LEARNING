@@ -1,0 +1,4 @@
+# Ablation: final candidate (ppo_imp3_memory) without the novelty term.
+inherit: ../ppo_imp3_memory.yaml
+run_name: ppo_abl_no_novelty
+novelty_bonus: 0.0

@@ -1,0 +1,5 @@
+# Optional: object-aware click abstraction (16x16 grid, clicks masked to non-background cells).
+inherit: dqn_imp3_memory.yaml
+run_name: dqn_imp4_objclick
+click_grid: 16
+object_clicks: true

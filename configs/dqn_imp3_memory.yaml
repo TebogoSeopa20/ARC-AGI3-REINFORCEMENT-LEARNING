@@ -1,0 +1,4 @@
+# Improvement 3 (candidate): short-horizon memory (4-frame stack) on top of improvement 2.
+inherit: dqn_imp2_clockmask.yaml
+run_name: dqn_imp3_memory
+frame_stack: 4

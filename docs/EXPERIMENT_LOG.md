@@ -78,18 +78,39 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   - Levels (1.33) and score (0.003) are unchanged.
   - The hypothesis that PPO would gain more than DQN is rejected: DQN moved more on every exploration metric.
 
-### Improvement 2 — decision pending a diagnostic (both algorithms)
-- **Observed limitation (both):** in 7 dev games every action changes the frame, even random clicks on empty cells, and
-  nearly every frame is new. Game-overs there occur at identical counts for all agents. The likely cause is an
-  on-screen clock or move counter. If so, a frame-hash novelty count and a changed/unchanged bonus cannot tell a
-  meaningful action from a wasted one, which explains why improvement 1 helped only in no-op-heavy games.
-- **Check first:** `scripts/diagnose_changes.py` (random policy, dev games only) measures how many pixels change per step,
-  where, and how many distinct states remain under a coarse 8×8 abstraction.
-- **If a HUD/clock is confirmed:** improvement 2 = clock-invariant exploration. Novelty and change are computed on the
-  frame with volatile pixels removed or coarsened, so the bonus reflects what the action did. It is evaluated
-  separately for DQN and PPO, and frame-stack memory moves to improvement 3 / ablation.
-- **If not confirmed:** keep frame-stack memory (`*_imp2_memory.yaml`) as planned, justified by the fixed-clock lives:
-  information must carry across frames within a life.
+### Diagnostic: what changes between frames (23 Sept, `scripts/diagnose_changes.py`, random policy, 300 actions/game, dev only)
+- **No static HUD.** No pixel changes on more than half of the steps in any game (`px_changing_over_half` = 0 everywhere).
+- **A per-action tick.** In 7 games almost every action, including random clicks on empty cells, changes exactly
+  1–2 pixels (median changed pixels, with click change rate in brackets): s5i5 1 (1.00), tn36 1 (1.00), sp80 2 (1.00),
+  su15 2 (0.87), ka59 1 (0.64), cn04 0–1 (0.46), tu93 2. Together with the identical game-over counts across agents, this
+  matches a move-budget bar that fills one pixel per action and refills on RESET. Each tick pixel changes only once per
+  life, so a frequency threshold cannot detect it; this is why `px_changing_over_half` stays 0.
+- **Large, meaningful changes elsewhere.** ls20 52, re86 53, r11l 93 and wa30 32 pixels per step (moving sprites).
+- **Rare changes.** lp85, sb26, sc25 and sk48 change on 4–13% of actions; these are the games where improvement 1 helped.
+- **Coarse abstraction is not an option.** An 8×8 colour-mode grid collapses nearly every game to 1–3 states
+  (`unique_coarse8`), destroying the information novelty needs.
+
+### DQN and PPO — improvement 2 (`*_imp2_clockmask.yaml`)
+- **Observed limitation:** in tick games, every action produces a new frame hash and a "changed" frame, so both
+  improvement-1 bonuses are constant and carry no information about what the action did. Levels did not move with
+  improvement 1 for either algorithm.
+- **Hypothesis:** removing clock-like pixels before hashing and change detection makes the bonuses action-dependent in tick
+  games. This should lower the masked change rate toward the share of actions with a real effect, raise the novelty
+  signal's variance, and lead to more levels than improvement 1 in those games, without hurting lp85/sb26/sc25/sk48.
+- **Intervention:** `ClockMask` (src/arcrl/agents/exploration.py). A pixel is masked once it has made the same colour
+  transition at least twice in ordinary steps and never any other transition; level-change transitions are ignored. The mask
+  is estimated online per game and applies only to the shaping. The network input, action choice and scores are unchanged.
+  Known false positive: a pixel the agent changes identically once per life is also masked.
+- **Check first (cheap):** rerun `scripts/diagnose_changes.py`. For tick games, `clock_px` should be > 0,
+  `change_rate_clockmasked` should fall well below 1.0 and `unique_frames_clockmasked` should shrink. For sprite games
+  (ls20, r11l), values should stay close to the unmasked ones.
+- **Evaluation:** 3 seeds each for DQN and PPO against improvement 1. Report change rate and distinct frames masked and
+  unmasked, levels, score, and per-game results for tick games vs. others.
+- **Result:**
+
+### Improvement 3 candidate (`*_imp3_memory.yaml`)
+Frame-stack memory on top of improvement 2, justified if improvement 2 shows agents reaching new states without converting
+them into level progress within a life. Decide after improvement 2 results.
 
 ## Failure cases to show in the report
 | Run | Seed | Game | What happened | Evidence |

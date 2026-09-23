@@ -1,4 +1,0 @@
-# Ablation: imp2 without the novelty term (isolates count-based exploration).
-inherit: ../ppo_imp2_memory.yaml
-run_name: ppo_abl_no_novelty
-novelty_bonus: 0.0

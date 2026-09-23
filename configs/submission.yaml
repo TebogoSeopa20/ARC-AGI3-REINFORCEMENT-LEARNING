@@ -1,5 +1,5 @@
 # Config baked into the Kaggle notebook by scripts/build_notebook.py. Point inherit at the final agent.
-inherit: dqn_imp2_memory.yaml
+inherit: dqn_imp2_clockmask.yaml
 run_name: submission
 max_actions_per_game: 400
 seeds: [0]
