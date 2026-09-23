@@ -1,6 +1,6 @@
 # Evaluation protocol (frozen before any improvement work)
 
-Frozen on: 23 September 2026 · commit: `git rev-parse --short HEAD` after the splits commit → ____
+Frozen on: 23 September 2026 · commit: "Freeze protocol: splits, packages, budget; add gitignore" (find with `git log --oneline --grep "Freeze protocol"`)
 Any unavoidable change gets a dated entry in the change log below.
 
 ## Environment
