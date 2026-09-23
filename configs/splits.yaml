@@ -1,5 +1,28 @@
-# PLACEHOLDER — regenerate with `python scripts/make_splits.py --force` once, BEFORE any experiment,
-# then commit and never change it. Game ids below are examples from the public set.
 seed: 2026
-dev: [ls20, vc33]
-heldout: [ft09]
+dev:
+- cn04
+- ka59
+- lp85
+- ls20
+- r11l
+- re86
+- s5i5
+- sb26
+- sc25
+- sk48
+- sp80
+- su15
+- tn36
+- tu93
+- wa30
+heldout:
+- ar25
+- bp35
+- cd82
+- dc22
+- ft09
+- g50t
+- lf52
+- m0r0
+- tr87
+- vc33
