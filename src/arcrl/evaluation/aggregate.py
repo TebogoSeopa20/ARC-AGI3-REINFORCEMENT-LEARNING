@@ -13,7 +13,11 @@ def load_results(results_dir: str | Path) -> pd.DataFrame:
     rows = []
     for f in Path(results_dir).glob("*/*/games.jsonl"):
         rows.extend(read_jsonl(f))
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    for col in ("change_rate", "unique_states"):
+        if col not in df:
+            df[col] = float("nan")
+    return df
 
 
 def ci95(x) -> float:
@@ -29,6 +33,8 @@ def summary_table(df: pd.DataFrame) -> pd.DataFrame:
         actions=("actions", "sum"),
         game_overs=("game_overs", "sum"),
         wall_time_s=("wall_time_s", "sum"),
+        change_rate=("change_rate", "mean"),
+        unique_states=("unique_states", "sum"),
     ).reset_index()
     g = per_seed.groupby(["run_name", "split"])
     out = g.agg(
@@ -41,6 +47,8 @@ def summary_table(df: pd.DataFrame) -> pd.DataFrame:
         wins_mean=("wins", "mean"),
         actions_mean=("actions", "mean"),
         wall_time_s_mean=("wall_time_s", "mean"),
+        change_rate_mean=("change_rate", "mean"),
+        unique_states_mean=("unique_states", "mean"),
     ).reset_index()
     return out.round(3)
 
@@ -52,6 +60,9 @@ def per_game_table(df: pd.DataFrame) -> pd.DataFrame:
         levels_min=("levels_completed", "min"),
         levels_max=("levels_completed", "max"),
         actions_mean=("actions", "mean"),
+        game_overs_mean=("game_overs", "mean"),
+        change_rate_mean=("change_rate", "mean"),
+        unique_states_mean=("unique_states", "mean"),
     ).reset_index().round(3)
 
 

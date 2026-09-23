@@ -6,7 +6,7 @@ import time
 from arcengine import GameAction
 
 from arcrl.agents.controller import OnlineController
-from arcrl.env.obs import Obs
+from arcrl.env.obs import Obs, grid_hash
 
 
 def play_game(env, ctrl: OnlineController, game_id: str, budget: int, log_every: int = 50) -> dict:
@@ -17,6 +17,8 @@ def play_game(env, ctrl: OnlineController, game_id: str, budget: int, log_every:
     actions = resets = game_overs = 0
     level_at, game_over_at, curve, losses = [], [], [], []
     max_levels, win_levels = 0, 0
+    moves = changed = 0
+    seen: set[bytes] = set()
     while actions < budget:
         ga, data = ctrl.act(obs)
         if ga is None:
@@ -27,6 +29,10 @@ def play_game(env, ctrl: OnlineController, game_id: str, budget: int, log_every:
         if fd is None:
             break
         new = Obs.from_frame_data(fd)
+        if ga is not GameAction.RESET and obs.grid is not None:
+            moves += 1
+            changed += not (new.grid == obs.grid).all()
+        seen.add(grid_hash(new.grid))
         if new.levels > max_levels:
             level_at.extend([actions] * (new.levels - max_levels))
             max_levels = new.levels
@@ -54,6 +60,8 @@ def play_game(env, ctrl: OnlineController, game_id: str, budget: int, log_every:
         "game_overs": game_overs,
         "level_completed_at": level_at,
         "game_over_at": game_over_at,
+        "change_rate": round(changed / moves, 4) if moves else 0.0,
+        "unique_states": len(seen),
         "curve": curve,
         "learner_stats": losses,
         "shaped_return": ctrl.shaped_return,
