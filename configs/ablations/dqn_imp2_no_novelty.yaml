@@ -1,0 +1,4 @@
+# Ablation: imp2 without the novelty term (isolates count-based exploration).
+inherit: ../dqn_imp2_memory.yaml
+run_name: dqn_abl_no_novelty
+novelty_bonus: 0.0

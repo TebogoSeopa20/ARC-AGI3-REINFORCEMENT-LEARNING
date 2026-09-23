@@ -1,0 +1,5 @@
+# Ablation: memory without any shaping (does frame stacking help on its own?).
+inherit: ../base.yaml
+run_name: ppo_abl_memory_only
+algo: ppo
+frame_stack: 4

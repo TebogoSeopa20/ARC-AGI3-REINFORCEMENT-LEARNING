@@ -1,0 +1,43 @@
+# Shared defaults. Every other config sets `inherit: base.yaml` and overrides only what changes.
+# Protocol values (budget, seeds, splits) are frozen in docs/PROTOCOL.md — do not tune them.
+run_name: base
+seeds: [0, 1, 2]
+output_dir: outputs
+splits_file: configs/splits.yaml
+split: dev
+device: auto
+max_actions_per_game: 1000
+
+click_grid: 8
+object_clicks: false
+frame_stack: 1
+
+level_reward: 1.0
+game_over_penalty: 0.0
+change_bonus: 0.0
+novelty_bonus: 0.0
+
+gamma: 0.95
+lr: 2.5e-4
+grad_clip: 10.0
+
+replay_capacity: 5000
+batch_size: 32
+warmup_steps: 64
+train_freq: 4          # DQN gradient step every 4 actions (CPU cost; see docs/PROTOCOL.md)
+target_sync: 250
+eps_start: 1.0
+eps_end: 0.05
+eps_decay_steps: 1000
+double_dqn: false
+
+rollout_len: 128
+ppo_epochs: 4
+minibatch_size: 32
+clip_eps: 0.2
+gae_lambda: 0.95
+vf_coef: 0.5
+ent_coef: 0.01
+
+init_checkpoint: null
+reset_weights_per_game: true

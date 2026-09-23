@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arcrl"
+version = "0.1.0"
+description = "DQN vs PPO on ARC-AGI-3 (Wits COMS4061A/COMS7071A RL assignment)"
+authors = [
+    { name = "Tebogo Seopa" },
+    { name = "Mandisa Mashinini" },
+    { name = "Onkabetse Monamodi" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "arc-agi>=0.9.6",
+    # Intel Mac: PyPI stops publishing macOS x86_64 torch wheels after 2.2.2.
+    "torch>=2.2,<2.3; sys_platform=='darwin' and platform_machine=='x86_64'",
+    "torch>=2.3; sys_platform!='darwin' or platform_machine!='x86_64'",
+    "numpy>=1.26,<2; sys_platform=='darwin' and platform_machine=='x86_64'",
+    "numpy>=1.26; sys_platform!='darwin' or platform_machine!='x86_64'",
+    "gymnasium>=0.29",
+    "PyYAML>=6.0",
+    "pandas>=2.2",
+    "matplotlib>=3.7",
+    "tabulate>=0.9",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+kaggle = ["kaggle>=2.2", "pyarrow"]
+dev = ["pytest>=8.0", "kaggle>=2.2", "pyarrow"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

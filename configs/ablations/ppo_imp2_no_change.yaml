@@ -1,0 +1,4 @@
+# Ablation: imp2 without the frame-change term.
+inherit: ../ppo_imp2_memory.yaml
+run_name: ppo_abl_no_change
+change_bonus: 0.0

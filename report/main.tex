@@ -1,0 +1,56 @@
+% Replace this preamble with the official RLC 2026 template preamble (cover page disabled).
+\documentclass{article}
+\usepackage{graphicx,booktabs,amsmath,hyperref}
+\graphicspath{{../outputs/figures/}}
+
+\title{Which Improvements Transfer? Value-Based vs.\ Policy-Gradient Online Learning on ARC-AGI-3}
+\author{Tebogo Seopa (2563912@students.wits.ac.za) \and Mandisa Mashinini (2589970@students.wits.ac.za)
+  \and Onkabetse Monamodi (2854004@students.wits.ac.za)}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+% Problem, approach, key quantitative result, main lesson. End with the public code link.
+\end{abstract}
+
+\section{Introduction}
+% Problem, research question, contribution (matched, ablated comparison; not a new algorithm).
+
+\section{Background and Related Work}
+% DQN \cite{mnih2015dqn}, PPO \cite{schulman2017ppo}, count-based exploration \cite{bellemare2016count},
+% DRQN / memory \cite{hausknecht2015drqn}, ARC-AGI-3 agents \cite{arcprize2026milestone1,smit2026goose}.
+
+\section{Problem Formulation}
+% POMDP: observation (64x64x16 one-hot, k-frame stack), action abstraction (6 + k^2, masked),
+% reward (level delta; shaping is training-only), termination (WIN / GAME_OVER / budget), gamma.
+% What persists between actions, levels, games, evaluation runs.
+
+\section{Methods}
+\subsection{DQN}
+% Loss, replay, target network, epsilon schedule, masked max.
+\subsection{PPO}
+% Clipped surrogate, GAE, value loss, entropy, what is learned and when.
+\subsection{Improvements}
+% For each: observed limitation -> hypothesis -> intervention.
+
+\section{Experimental Setup}
+% Protocol (docs/PROTOCOL.md): splits, budget, seeds, hardware, hyperparameter table, package versions.
+
+\section{Results}
+% Table: official score, levels, wins, actions per version (mean +- std over 3 seeds), local vs Kaggle.
+% \input{../outputs/figures/summary.tex}
+% Figure: learning curves per algorithm.
+% \includegraphics[width=\linewidth]{curve_dqn_dev.png}
+\subsection{Ablations}
+\subsection{Held-out Generalisation}
+\subsection{Success and Failure Cases}
+
+\section{Discussion and Limitations}
+% Interaction efficiency, compute, what transferred across algorithms, what did not and why.
+
+\section{Conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
