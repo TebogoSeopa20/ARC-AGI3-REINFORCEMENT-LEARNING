@@ -15,6 +15,10 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 24 Sept | ppo_imp1_explore | ppo_imp1_explore.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 17 min | change 0.712, unique 6356 |
 | 24 Sept | dqn_imp2_clockmask | dqn_imp2_clockmask.yaml | dev | 0,1,2 | 0.113 ± 0.176 | 2.67 ± 0.58 | 26 min | change 0.741, unique 6982; new: r11l s1@811, sp80 s2@587 |
 | 24 Sept | ppo_imp2_clockmask | ppo_imp2_clockmask.yaml | dev | 0,1,2 | 0.003 ± 0.003 | 1.67 ± 0.58 | 9 min | change 0.711, unique 6678; new: sp80 s0@616 |
+| 25 Sept | dqn_abl_no_novelty | ablations/dqn_final_no_novelty.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 16 min | unique 6612 |
+| 25 Sept | dqn_abl_no_change | ablations/dqn_final_no_change.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 17 min | unique 6803 |
+| 25 Sept | ppo_abl_no_novelty | ablations/ppo_final_no_novelty.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6793; new: cn04 s2@971 |
+| 25 Sept | ppo_abl_no_change | ablations/ppo_final_no_change.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6427 |
 
 Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
 
@@ -90,6 +94,31 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
     (games restricted to 4–5 actions show entropy ≈ ln 4 = 1.39 or ln 5 = 1.61 in both versions).
   - Levels (1.33) and score (0.003) are unchanged.
   - The hypothesis that PPO would gain more than DQN is rejected: DQN moved more on every exploration metric.
+
+### Ablations of improvement 2 (25 Sept, dev, 3 seeds; each removes one shaping term, clock mask kept)
+
+| Run | Levels (per seed) | Distinct frames | Score |
+|---|---|---|---|
+| random | 1.67 (2, 2, 1) | 5922 | 0.010 |
+| dqn_imp2_clockmask | 2.67 (3, 2, 3) | 6982 | 0.113 |
+| dqn_abl_no_novelty | 2.33 (3, 2, 2) | 6612 | 0.110 |
+| dqn_abl_no_change | 2.33 (3, 2, 2) | 6803 | 0.110 |
+| ppo_imp2_clockmask | 1.67 (2, 1, 2) | 6678 | 0.003 |
+| ppo_abl_no_novelty | 2.00 (2, 1, 3) | 6793 | 0.003 |
+| ppo_abl_no_change | 2.00 (1, 3, 2) | 6427 | 0.003 |
+
+- **DQN: the two terms are complementary.** Removing either lowers exploration: −370 frames without novelty, −179 without
+  the change term. The losses sit in different games. Without novelty: sb26 278 → 146. Without the change term:
+  sp80 495 → 377. Without either: su15 355 → 213 / 196, so su15 needs both. s5i5 rises in both ablations
+  (300 → 319 / 370), the one game where the combination explores less.
+- **PPO: the change term carries the effect, novelty does not.** Without the change term, frames fall to 6427 (sc25
+  280 → 191). Without novelty, frames rise to 6793, slightly above imp2. For PPO, novelty is neutral to mildly harmful.
+- **Levels cannot separate the components.** All differences are within one level of imp2 and within seed noise. Two
+  completions are new: DQN r11l seed 1 at 533 (both ablations), and PPO cn04 seed 2 at action 971 (no novelty), the first
+  cn04 completion in any run.
+- **Report framing:** attribution is supported on exploration metrics, not on levels or score. The terms work in different
+  games for DQN and differently across algorithms. This is an instance of the brief's "evaluate an idea separately for each
+  algorithm": the same shaping behaves differently for DQN and PPO.
 
 ### Diagnostic: what changes between frames (23 Sept, `scripts/diagnose_changes.py`, random policy, 300 actions/game, dev only)
 - **No static HUD.** No pixel changes on more than half of the steps in any game (`px_changing_over_half` = 0 everywhere).
@@ -197,11 +226,42 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   Game-independent exploration behaviour transfers across ARC-AGI-3 games (strong for PPO, and it rescues low-ε DQN);
   level-completing behaviour does not, because level rewards are too rare during pretraining to learn from.
 
-### Decision on improvement 4 (25 Sept): stop here
-The criterion set before running improvement 3 was: pursue efficiency if pretraining gives faster first completions.
-It did not (lp85 mean 256 vs 185 actions). The remaining limitation, level rewards almost never observed, is the same one
-improvements 1–3 already target. No new, specific limitation motivates a fourth method, so the investigation moves to
-ablations, held-out evaluation, the Kaggle submission and the report.
+### Decision on improvement 4 (25 Sept, revised the same day)
+The first decision was to stop, because pretraining did not give faster first completions. It was revised after
+comparing against published ARC-AGI-3 agents, which surfaced a limitation the log had measured but not acted on.
+- Context: frontier LLMs score below 1% on ARC-AGI-3. The preview winner StochasticGoose (a CNN that learns which actions
+  change the frame) scored 12.58% on the preview set and 0.25% on the full benchmark. Second place, Blind Squirrel,
+  prunes actions that do not change the state. Both spend their budget on actions with effects.
+- Our agents do the opposite. The 23 Sept diagnostic shows click-hit rates of 4.4% (lp85), 9.7% (sb26), 5.1% (sc25)
+  and 0% (sk48) under 8×8 centre clicks. Every agent re-tries actions already seen to do nothing in the same state,
+  including after RESET.
+
+### DQN and PPO — improvement 4: efficient action selection (`*_imp4_efficient.yaml`)
+- **Observed limitation:** most actions in click games hit empty cells (hit rates 0–10%). Actions known to do nothing in a
+  state are repeated whenever that state recurs. All learning signals are sparse: the level reward is rare, and the
+  shaping reward is a single scalar per step.
+- **Hypothesis:** spending actions on predicted-effective, not-yet-failed actions at the resolution of actual objects
+  raises the share of actions that change the clock-masked frame (`effect_rate`), reaches more distinct states per action,
+  and converts that into more and earlier level completions than improvement 2.
+- **Intervention (three components, each ablated):**
+  1. **Effect head** on the shared CNN: per-action logits of P(clock-masked frame changes), trained with BCE on every
+     transition. This is a dense, supervised auxiliary task, as in UNREAL (Jaderberg et al., 2017) and StochasticGoose
+     (Smit, 2025). DQN's ε-exploration samples actions in proportion to the predicted probability instead of uniformly.
+     PPO adds `effect_bias · log σ(effect)` (detached) to its logits; the bias used at sampling time is stored and reused
+     in the update so the importance ratio stays exact.
+  2. **No-effect pruning:** per game, the controller records, per clock-masked state hash, the actions that left the frame
+     unchanged, and excludes them when that state recurs (including after RESET) while one legal action remains
+     (after Blind Squirrel).
+  3. **Object-aware 16×16 clicks:** click cells of 4×4 pixels, restricted to cells containing non-background pixels,
+     clicking an object pixel rather than the cell centre (`ActionSpace(object_clicks=True)`).
+  All three are game-agnostic and use only the observation. Weights reset per game, as in improvement 2.
+- **Reproducibility check:** after adding the code, dqn_baseline and ppo_baseline reproduce the previous code's results
+  bit for bit (same losses, levels and game-overs on the toy harness), so earlier runs remain valid.
+- **Evidence to check:** `effect_rate` (new metric: share of actions that changed the clock-masked frame), distinct frames,
+  levels and actions to first completion, and official score against improvement 2 and random on all 15 dev games,
+  3 seeds; then the three single-component ablations per algorithm (`ablations/*_imp4_no_*.yaml`).
+  Completions are judged with the shared-luck rule.
+- **Result:**
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra

@@ -58,6 +58,10 @@ class RewardShaper:
         self.cfg = cfg
         self.counts: Counter[bytes] = Counter()
         self.clock = ClockMask() if cfg.clock_mask else None
+        self.last_changed = False
+
+    def key(self, grid: np.ndarray) -> bytes:
+        return grid_hash(self.clock.apply(grid) if self.clock is not None else grid)
 
     def reset_game(self) -> None:
         self.counts.clear()
@@ -73,8 +77,9 @@ class RewardShaper:
             if d_levels == 0:
                 self.clock.update(prev_grid, grid)
             p, g = self.clock.apply(prev_grid), self.clock.apply(grid)
+        self.last_changed = d_levels > 0 or not np.array_equal(p, g)
         if c.change_bonus:
-            parts["change"] = c.change_bonus * (1.0 if not np.array_equal(p, g) else -1.0)
+            parts["change"] = c.change_bonus * (1.0 if self.last_changed else -1.0)
         if c.novelty_bonus:
             h = grid_hash(g)
             self.counts[h] += 1

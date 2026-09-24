@@ -13,7 +13,7 @@ class RandomLearner:
         self.t += 1
         return int(self.rng.choice(np.flatnonzero(mask)))
 
-    def observe(self, *args) -> None:
+    def observe(self, *args, **kwargs) -> None:
         return None
 
     def state_dict(self) -> dict:

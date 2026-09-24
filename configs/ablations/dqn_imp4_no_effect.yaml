@@ -1,0 +1,4 @@
+# Ablation: improvement 4 without the learned effect head.
+inherit: ../dqn_imp4_efficient.yaml
+run_name: dqn_abl_imp4_no_effect
+effect_model: false

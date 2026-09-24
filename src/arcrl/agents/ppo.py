@@ -4,11 +4,17 @@ Learning happens every `rollout_len` environment steps: advantages are computed 
 then `ppo_epochs` passes of minibatch SGD maximise
     E[min(rho*A, clip(rho, 1-eps, 1+eps)*A)] - vf_coef*(V - R)^2 + ent_coef*H(pi)
 where rho = pi_new(a|s) / pi_old(a|s). The rollout is then discarded (on-policy).
+
+Improvement 4 (cfg.effect_model): an effect head predicts, per action, whether it changes the clock-masked
+frame (BCE auxiliary loss on every transition). Its detached log-probability, scaled by effect_bias, is added
+to the policy logits. The bias used when sampling is stored with the transition and reused in the update, so
+the importance ratio compares identical behaviour distributions.
 """
 from __future__ import annotations
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch.distributions import Categorical
 
 from arcrl.models.nets import ArcNet
@@ -21,7 +27,8 @@ class PPOLearner:
     def __init__(self, cfg: Config, n_actions: int, device: str, seed: int = 0):
         self.cfg, self.device, self.n = cfg, device, n_actions
         self.rng = np.random.default_rng(seed)
-        self.net = ArcNet(cfg.frame_stack, cfg.click_grid, value_head=True).to(device)
+        self.effect = cfg.effect_model
+        self.net = ArcNet(cfg.frame_stack, cfg.click_grid, value_head=True, effect_head=self.effect).to(device)
         self.opt = torch.optim.Adam(self.net.parameters(), lr=cfg.lr, eps=1e-5)
         self.t = 0
         self._pending: tuple[float, float] | None = None
@@ -29,26 +36,34 @@ class PPOLearner:
 
     def _clear(self) -> None:
         self.S, self.M, self.A, self.LP, self.V, self.R, self.D = [], [], [], [], [], [], []
+        self.B, self.Y = [], []
 
-    def _dist(self, s: torch.Tensor, m: torch.Tensor):
-        logits, v = self.net(s)
-        return Categorical(logits=logits.masked_fill(~m, NEG)), v
+    def _dist(self, s: torch.Tensor, m: torch.Tensor, bias: torch.Tensor | None = None):
+        if not self.effect:
+            logits, v = self.net(s)
+            return Categorical(logits=logits.masked_fill(~m, NEG)), v, None
+        logits, v, eff = self.net.forward_all(s)
+        if bias is None:
+            bias = self.cfg.effect_bias * F.logsigmoid(eff.detach())
+        return Categorical(logits=(logits + bias).masked_fill(~m, NEG)), v, (eff, bias)
 
     def select(self, s: np.ndarray, mask: np.ndarray) -> int:
         self.t += 1
         with torch.no_grad():
-            dist, v = self._dist(
+            dist, v, extra = self._dist(
                 torch.as_tensor(s[None], device=self.device),
                 torch.as_tensor(mask[None], device=self.device),
             )
             a = dist.sample()
-        self._pending = (float(dist.log_prob(a)), float(v))
+        bias = extra[1][0].cpu().numpy() if extra else None
+        self._pending = (float(dist.log_prob(a)), float(v), bias)
         return int(a)
 
-    def observe(self, s, mask, a, r, s2, m2, done) -> dict | None:
-        lp, v = self._pending
+    def observe(self, s, mask, a, r, s2, m2, done, changed: bool = False) -> dict | None:
+        lp, v, bias = self._pending
         self.S.append(s); self.M.append(mask); self.A.append(a)
         self.LP.append(lp); self.V.append(v); self.R.append(r); self.D.append(float(done))
+        self.B.append(bias); self.Y.append(float(changed))
         if len(self.S) < self.cfg.rollout_len:
             return None
         last_v = 0.0
@@ -81,11 +96,13 @@ class PPOLearner:
         LP = torch.as_tensor(self.LP, device=dev)
         ADV = torch.as_tensor(adv, device=dev)
         RET = torch.as_tensor(ret, device=dev)
+        B = torch.as_tensor(np.stack(self.B), device=dev) if self.effect else None
+        Y = torch.as_tensor(self.Y, device=dev)
         n, stats = len(A), {}
         for _ in range(c.ppo_epochs):
             for idx in np.array_split(self.rng.permutation(n), max(1, n // c.minibatch_size)):
                 idx = torch.as_tensor(idx, device=dev)
-                dist, v = self._dist(S[idx], M[idx])
+                dist, v, extra = self._dist(S[idx], M[idx], B[idx] if B is not None else None)
                 ratio = torch.exp(dist.log_prob(A[idx]) - LP[idx])
                 a_n = ADV[idx]
                 a_n = (a_n - a_n.mean()) / (a_n.std() + 1e-8) if len(idx) > 1 else a_n
@@ -93,12 +110,17 @@ class PPOLearner:
                 vf = (v - RET[idx]).pow(2).mean()
                 ent = dist.entropy().mean()
                 loss = pg + c.vf_coef * vf - c.ent_coef * ent
+                if extra is not None:
+                    aux = F.binary_cross_entropy_with_logits(extra[0].gather(1, A[idx][:, None]).squeeze(1), Y[idx])
+                    loss = loss + c.effect_coef * aux
                 self.opt.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.net.parameters(), c.grad_clip)
                 self.opt.step()
                 stats = {"loss": loss.item(), "pg": pg.item(), "vf": vf.item(), "entropy": ent.item(),
                          "clip_frac": float(((ratio - 1).abs() > c.clip_eps).float().mean())}
+                if extra is not None:
+                    stats["effect_loss"] = aux.item()
         return stats
 
     def state_dict(self) -> dict:

@@ -1,0 +1,10 @@
+# Improvement 4: efficient action selection on top of improvement 2 (from scratch, per game).
+#  - effect head: learned P(action changes the clock-masked frame), BCE on every transition, guides action choice
+#  - no-effect pruning: actions seen to do nothing in a (clock-masked) state are skipped when it recurs
+#  - finer, object-aware clicks: 16x16 cells, clicks restricted to cells containing non-background pixels
+inherit: ppo_imp2_clockmask.yaml
+run_name: ppo_imp4_efficient
+effect_model: true
+prune_noeffect: true
+click_grid: 16
+object_clicks: true

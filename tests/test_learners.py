@@ -36,3 +36,23 @@ def test_dqn_state_dict_roundtrip():
     b.load_state_dict(a.state_dict())
     x = torch.zeros(1, 1, 64, 64, dtype=torch.uint8)
     assert torch.allclose(a.q(x), b.q(x))
+
+
+@pytest.mark.parametrize("cls", [DQNLearner, PPOLearner])
+def test_effect_head_trains_on_labels(cls):
+    cfg = Config(batch_size=4, warmup_steps=4, rollout_len=8, minibatch_size=4, ppo_epochs=1, effect_model=True)
+    n = 6 + 64
+    L = cls(cfg, n, "cpu", seed=0)
+    s = np.zeros((1, 64, 64), np.uint8)
+    mask = np.ones(n, bool)
+    stats = None
+    for i in range(16):
+        a = L.select(s, mask)
+        stats = L.observe(s, mask, a, 0.0, s, mask, False, changed=a < 6) or stats
+    assert "effect_loss" in stats and np.isfinite(stats["effect_loss"])
+
+
+def test_effect_net_shapes():
+    net = ArcNet(frame_stack=1, click_grid=16, value_head=True, effect_head=True)
+    out, v, eff = net.forward_all(torch.zeros(2, 1, 64, 64, dtype=torch.uint8))
+    assert out.shape == eff.shape == (2, 6 + 256) and v.shape == (2,)

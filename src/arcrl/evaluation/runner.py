@@ -65,5 +65,7 @@ def play_game(env, ctrl: OnlineController, game_id: str, budget: int, log_every:
         "curve": curve,
         "learner_stats": losses,
         "shaped_return": ctrl.shaped_return,
+        "effect_rate": round(ctrl.effective_steps / ctrl.steps, 4) if ctrl.steps else 0.0,
+        "pruned_choices": ctrl.pruned_choices,
         "wall_time_s": round(time.time() - t0, 2),
     }

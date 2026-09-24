@@ -1,0 +1,5 @@
+# Ablation: improvement 4 with the original 8x8 centre clicks.
+inherit: ../dqn_imp4_efficient.yaml
+run_name: dqn_abl_imp4_no_objclick
+click_grid: 8
+object_clicks: false

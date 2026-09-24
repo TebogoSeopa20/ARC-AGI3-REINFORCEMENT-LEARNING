@@ -1,0 +1,4 @@
+# Ablation: improvement 4 without no-effect pruning.
+inherit: ../ppo_imp4_efficient.yaml
+run_name: ppo_abl_imp4_no_prune
+prune_noeffect: false

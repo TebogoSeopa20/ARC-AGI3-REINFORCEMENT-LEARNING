@@ -92,3 +92,19 @@ def test_clock_mask_ignores_counter_but_not_movement():
             cm.update(g, nxt)
             g = nxt
     assert cm.mask[0, :10].all() and not cm.mask[30:32, :9].any()
+
+
+def test_noeffect_pruning_skips_known_dead_actions():
+    import numpy as np
+
+    from arcrl.env.obs import Obs
+
+    cfg = Config(algo="random", prune_noeffect=True, clock_mask=True)
+    ctrl = OnlineController(cfg)
+    g = np.zeros((64, 64), np.uint8)
+    obs = Obs(grid=g, state="NOT_FINISHED", levels=0, available=[1, 6])
+    for _ in range(40):
+        ctrl.act(obs)
+    tried = ctrl.noeffect[ctrl.shaper.key(g)]
+    assert len(tried) >= 20 and ctrl.pruned_choices > 0
+    assert ctrl.effective_steps == 0

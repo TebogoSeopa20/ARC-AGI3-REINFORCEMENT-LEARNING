@@ -6,6 +6,11 @@ chooses the next action. Persistence: learner weights, replay/rollout and novelt
 across levels and GAME_OVER resets within a game; new_game() resets them unless
 cfg.reset_weights_per_game is False
 (pretraining), in which case only the exploration schedule restarts and any partial PPO rollout is dropped.
+
+Improvement 4 (cfg.prune_noeffect): per game, a table maps each clock-masked state to the actions already
+seen to leave it unchanged; those actions are removed from the choice when that state recurs (including after
+RESET), as long as one legal action remains (cf. Blind Squirrel's state-graph pruning). Per-step effect labels
+(did the clock-masked frame change?) are passed to the learner for its effect head.
 """
 from __future__ import annotations
 
@@ -50,6 +55,10 @@ class OnlineController:
         self.prev: tuple | None = None
         self.last_stats: dict | None = None
         self.shaped_return = 0.0
+        self.noeffect: dict[bytes, set[int]] = {}
+        self.steps = 0
+        self.effective_steps = 0
+        self.pruned_choices = 0
 
     def act(self, obs: Obs):
         if obs.state in ("NOT_PLAYED", "GAME_OVER"):
@@ -63,21 +72,39 @@ class OnlineController:
         if obs.state == "WIN":
             self.prev = None
             return None, None
-        a = self.learner.select(s, mask)
+        key = self.shaper.key(obs.grid) if self.cfg.prune_noeffect else None
+        act_mask = self._prune(mask, key)
+        a = self.learner.select(s, act_mask)
         ga, data = self.actions.decode(a)
-        self.prev = (s, mask, a, obs.grid, obs.levels)
+        self.prev = (s, act_mask, a, obs.grid, obs.levels, key)
         return ga, data
+
+    def _prune(self, mask: np.ndarray, key: bytes | None) -> np.ndarray:
+        tried = self.noeffect.get(key) if key is not None else None
+        if not tried:
+            return mask
+        pruned = mask.copy()
+        pruned[list(tried)] = False
+        if not pruned.any():
+            return mask
+        self.pruned_choices += 1
+        return pruned
 
     def _close(self, obs: Obs, done: bool, s2=None, m2=None) -> None:
         if self.prev is None:
             return
-        s, mask, a, pgrid, plev = self.prev
+        s, mask, a, pgrid, plev, key = self.prev
         if s2 is None:
             s2 = self.stack.push(obs.grid) if self.stack.buf else np.repeat(obs.grid[None], self.cfg.frame_stack, 0)
             m2 = np.ones(self.actions.n, bool)
         r, _ = self.shaper(pgrid, obs.grid, max(0, obs.levels - plev), obs.state == "GAME_OVER")
+        changed = self.shaper.last_changed
         self.shaped_return += r
-        stats = self.learner.observe(s, mask, a, r, s2, m2, done)
+        self.steps += 1
+        self.effective_steps += changed
+        if key is not None and not changed and obs.state != "GAME_OVER":
+            self.noeffect.setdefault(key, set()).add(a)
+        stats = self.learner.observe(s, mask, a, r, s2, m2, done, changed=changed)
         if stats:
             self.last_stats = stats
 

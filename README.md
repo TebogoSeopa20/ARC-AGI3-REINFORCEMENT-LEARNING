@@ -15,6 +15,7 @@ relative to their own baselines and a random policy — and do improvements tran
 | Improvement 1 | `dqn_imp1_explore.yaml` | `ppo_imp1_explore.yaml` | Count-based novelty + frame-change shaping (Bellemare et al., 2016) |
 | Improvement 2 | `dqn_imp2_clockmask.yaml` | `ppo_imp2_clockmask.yaml` | Novelty/change computed with clock-like pixels masked (ClockMask) |
 | Improvement 3 | `dqn_imp3_pretrain.yaml` | `ppo_imp3_pretrain.yaml` | Cross-game pretraining on dev_a, online learning on unseen games (dev_b check; `*_final` = all dev → held-out) |
+| Improvement 4 | `dqn_imp4_efficient.yaml` | `ppo_imp4_efficient.yaml` | Learned action-effect head, no-effect pruning, 16×16 object-aware clicks (on top of imp2) |
 | Optional | `dqn_opt_memory.yaml` | `ppo_opt_memory.yaml` | + 4-frame stack (Hausknecht & Stone, 2015) |
 | Optional | `dqn_opt_objclick.yaml` | `ppo_opt_objclick.yaml` | + 16×16 object-aware click cells |
 

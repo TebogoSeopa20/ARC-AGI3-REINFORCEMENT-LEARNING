@@ -43,6 +43,12 @@ class Config:
     novelty_bonus: float = 0.0
     clock_mask: bool = False
 
+    # Improvement 4: efficient action selection
+    effect_model: bool = False
+    effect_coef: float = 1.0
+    effect_bias: float = 1.0
+    prune_noeffect: bool = False
+
     # Shared learner hparams
     gamma: float = 0.95
     lr: float = 2.5e-4
