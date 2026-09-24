@@ -69,8 +69,10 @@ class Config:
     ent_coef: float = 0.01
 
     # Persistence
-    init_checkpoint: str | None = None
+    init_checkpoint: str | None = None  # may contain {seed}
     reset_weights_per_game: bool = True
+    pretrain_split: str | None = None
+    pretrain_passes: int = 2
 
     extra: dict[str, Any] = field(default_factory=dict)
 
@@ -195,8 +197,25 @@ def append_jsonl(record: dict, path: str | Path) -> None:
         f.write(json.dumps(record, default=str) + "\n")
 
 
-def load_split(cfg: Config) -> list[str]:
-    if cfg.split == "toy":
-        return ["toy0", "toy1"]
-    splits = yaml.safe_load(Path(cfg.splits_file).read_text())
-    return list(splits[cfg.split])
+TOY_SPLITS = {"toy": ["toy0", "toy1"], "toy_a": ["toy0"], "toy_b": ["toy1"]}
+
+
+def load_split(cfg: Config, name: str | None = None) -> list[str]:
+    name = name or cfg.split
+    if name in TOY_SPLITS:
+        return TOY_SPLITS[name]
+    main = Path(cfg.splits_file)
+    for f in (main, main.with_name("pretrain_splits.yaml")):
+        if f.exists():
+            splits = yaml.safe_load(f.read_text()) or {}
+            if name in splits:
+                return list(splits[name])
+    raise KeyError(f"split '{name}' not found in {main} or pretrain_splits.yaml")
+
+
+def check_no_leakage(cfg: Config, eval_games: list[str]) -> None:
+    if not cfg.pretrain_split:
+        return
+    overlap = set(load_split(cfg, cfg.pretrain_split)) & set(eval_games)
+    if overlap:
+        raise SystemExit(f"leakage: evaluation games {sorted(overlap)} were used for pretraining ({cfg.pretrain_split})")

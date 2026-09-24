@@ -1,0 +1,4 @@
+# Optional (not in the main chain): short-horizon memory (4-frame stack) on top of improvement 2.
+inherit: ppo_imp2_clockmask.yaml
+run_name: ppo_opt_memory
+frame_stack: 4

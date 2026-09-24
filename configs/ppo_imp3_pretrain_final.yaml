@@ -1,0 +1,6 @@
+# Improvement 3 (final): pretrain on all 15 dev games, evaluate once on the 10 held-out games.
+inherit: ppo_imp3_pretrain.yaml
+run_name: ppo_imp3_pretrain_final
+pretrain_split: dev
+split: heldout
+init_checkpoint: outputs/checkpoints/ppo_imp3_pretrain_final/seed{seed}/final.pt

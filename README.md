@@ -14,8 +14,9 @@ relative to their own baselines and a random policy — and do improvements tran
 | Baseline | `dqn_baseline.yaml` | `ppo_baseline.yaml` | Sparse level reward, 8×8 click grid, single frame |
 | Improvement 1 | `dqn_imp1_explore.yaml` | `ppo_imp1_explore.yaml` | Count-based novelty + frame-change shaping (Bellemare et al., 2016) |
 | Improvement 2 | `dqn_imp2_clockmask.yaml` | `ppo_imp2_clockmask.yaml` | Novelty/change computed with clock-like pixels masked (ClockMask) |
-| Improvement 3 (candidate) | `dqn_imp3_memory.yaml` | `ppo_imp3_memory.yaml` | + 4-frame stack (Hausknecht & Stone, 2015) |
-| Optional | `dqn_imp4_objclick.yaml` | `ppo_imp4_objclick.yaml` | + 16×16 object-aware click cells |
+| Improvement 3 | `dqn_imp3_pretrain.yaml` | `ppo_imp3_pretrain.yaml` | Cross-game pretraining on dev_a, online learning on unseen games (dev_b check; `*_final` = all dev → held-out) |
+| Optional | `dqn_opt_memory.yaml` | `ppo_opt_memory.yaml` | + 4-frame stack (Hausknecht & Stone, 2015) |
+| Optional | `dqn_opt_objclick.yaml` | `ppo_opt_objclick.yaml` | + 16×16 object-aware click cells |
 
 The improvement order is a hypothesis, not a commitment: the brief requires each step to be motivated
 by the previous stage's evidence. Reorder the configs if baseline failure modes point elsewhere, and log why.

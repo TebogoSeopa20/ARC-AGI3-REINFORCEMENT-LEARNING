@@ -4,7 +4,8 @@ act(obs) is called with every new observation and returns the next (GameAction, 
 It closes the previous transition (shaped reward, done flag), lets the learner update, and
 chooses the next action. Persistence: learner weights, replay/rollout and novelty counts persist
 across levels and GAME_OVER resets within a game; new_game() resets them unless
-cfg.reset_weights_per_game is False.
+cfg.reset_weights_per_game is False
+(pretraining), in which case only the exploration schedule restarts and any partial PPO rollout is dropped.
 """
 from __future__ import annotations
 
@@ -30,7 +31,8 @@ class OnlineController:
         self.actions = ActionSpace(cfg.click_grid, cfg.object_clicks)
         self.init_state = None
         if cfg.init_checkpoint:
-            self.init_state = torch.load(cfg.init_checkpoint, map_location=self.device)
+            path = cfg.init_checkpoint.format(seed=seed)
+            self.init_state = torch.load(path, map_location=self.device)
         self.learner = None
         self.new_game(force=True)
 
@@ -39,6 +41,10 @@ class OnlineController:
             self.learner = LEARNERS[self.cfg.algo](self.cfg, self.actions.n, self.device, self.seed)
             if self.init_state is not None:
                 self.learner.load_state_dict(self.init_state)
+        else:
+            self.learner.t = 0
+            if hasattr(self.learner, "_clear"):
+                self.learner._clear()
         self.shaper = RewardShaper(self.cfg)
         self.stack = FrameStack(self.cfg.frame_stack)
         self.prev: tuple | None = None

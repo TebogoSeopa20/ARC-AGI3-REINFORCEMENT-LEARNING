@@ -14,7 +14,7 @@ import torch
 from arcrl.agents.controller import OnlineController
 from arcrl.evaluation.runner import play_game
 from arcrl.evaluation.scoring import official_game_scores, reference_game_score
-from arcrl.utils import Config, append_jsonl, get_logger, load_split, set_seed, write_run_meta
+from arcrl.utils import Config, append_jsonl, check_no_leakage, get_logger, load_split, set_seed, write_run_meta
 
 log = get_logger("evaluate")
 
@@ -22,7 +22,7 @@ log = get_logger("evaluate")
 def run_seed(cfg: Config, seed: int, games: list[str], out: Path) -> None:
     set_seed(seed)
     ctrl = OnlineController(cfg, seed=seed)
-    toy = cfg.split == "toy"
+    toy = cfg.split.startswith("toy")
     arc = card = None
     if not toy:
         arc = _common.make_arcade()
@@ -58,7 +58,8 @@ def run_seed(cfg: Config, seed: int, games: list[str], out: Path) -> None:
         r.update(run_name=cfg.run_name, split=cfg.split, seed=seed, algo=cfg.algo)
         append_jsonl(r, out / "games.jsonl")
     write_run_meta(cfg, out, seed=seed, games=games, eval_wall_time_s=round(time.time() - t0, 1),
-                   official_total=official.get("__total__"))
+                   official_total=official.get("__total__"),
+                   init_checkpoint=cfg.init_checkpoint.format(seed=seed) if cfg.init_checkpoint else None)
     if cfg.algo != "random":
         torch.save(ctrl.state_dict(), out / "final.pt")
     if arc is not None:
@@ -83,6 +84,7 @@ def main():
     if args.budget:
         cfg.max_actions_per_game = args.budget
     games = args.games.split(",") if args.games else load_split(cfg)
+    check_no_leakage(cfg, games)
 
     for seed in cfg.seeds:
         out = Path(cfg.output_dir) / "results" / cfg.run_name / f"{cfg.split}_seed{seed}"

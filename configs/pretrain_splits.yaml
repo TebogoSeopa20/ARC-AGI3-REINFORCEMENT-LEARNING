@@ -1,0 +1,5 @@
+# Improvement 3 development split of the 15 dev games (seeded shuffle, seed 2026). Held-out games are not touched.
+# dev_a: pretraining games; dev_b: games used to check pretraining before the final held-out evaluation.
+seed: 2026
+dev_a: [ka59, ls20, r11l, re86, s5i5, sb26, sc25, sp80, tn36, wa30]
+dev_b: [cn04, lp85, sk48, su15, tu93]

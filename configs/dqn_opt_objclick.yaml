@@ -1,0 +1,5 @@
+# Optional (not in the main chain): object-aware clicks (16x16 grid, clicks masked to non-background cells).
+inherit: dqn_imp2_clockmask.yaml
+run_name: dqn_opt_objclick
+click_grid: 16
+object_clicks: true

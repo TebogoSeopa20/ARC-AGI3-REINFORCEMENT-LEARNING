@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from arcrl.agents.controller import OnlineController
 from arcrl.env.arc_env import ArcAgi3Env
 from arcrl.env.toy import ToyArcEnv
@@ -28,7 +30,7 @@ def test_runner_handles_reset_game_over_and_budget():
 
 def test_every_config_parses():
     for p in list((ROOT / "configs").glob("*.yaml")) + list((ROOT / "configs" / "ablations").glob("*.yaml")):
-        if p.name == "splits.yaml":
+        if p.name in ("splits.yaml", "pretrain_splits.yaml"):
             continue
         cfg = Config.from_yaml(p)
         assert cfg.algo in ("dqn", "ppo", "random"), p
@@ -36,10 +38,41 @@ def test_every_config_parses():
 
 
 def test_ablation_differs_by_one_component():
-    final = Config.from_yaml(ROOT / "configs/dqn_imp3_memory.yaml")
-    assert final.clock_mask and final.frame_stack == 4 and final.novelty_bonus > 0
-    abl = Config.from_yaml(ROOT / "configs/ablations/dqn_final_no_clockmask.yaml")
-    assert not abl.clock_mask and abl.frame_stack == final.frame_stack and abl.novelty_bonus == final.novelty_bonus
+    imp2 = Config.from_yaml(ROOT / "configs/dqn_imp2_clockmask.yaml")
+    abl = Config.from_yaml(ROOT / "configs/ablations/dqn_final_no_novelty.yaml")
+    assert imp2.clock_mask and abl.clock_mask and abl.novelty_bonus == 0 and imp2.novelty_bonus > 0
+    imp3 = Config.from_yaml(ROOT / "configs/dqn_imp3_pretrain.yaml")
+    ctrl = Config.from_yaml(ROOT / "configs/ablations/dqn_scratch_loweps.yaml")
+    assert (imp3.eps_start, imp3.split) == (ctrl.eps_start, ctrl.split) and ctrl.init_checkpoint is None
+
+
+def test_pretrain_splits_are_disjoint_from_evaluation():
+    from arcrl.utils import check_no_leakage, load_split
+
+    for name in ("dqn_imp3_pretrain", "ppo_imp3_pretrain", "dqn_imp3_pretrain_final", "ppo_imp3_pretrain_final"):
+        cfg = Config.from_yaml(ROOT / f"configs/{name}.yaml")
+        cfg.splits_file = str(ROOT / "configs/splits.yaml")
+        check_no_leakage(cfg, load_split(cfg))
+    cfg = Config(pretrain_split="dev_a", splits_file=str(ROOT / "configs/splits.yaml"))
+    assert set(load_split(cfg, "dev_a")) | set(load_split(cfg, "dev_b")) == set(load_split(cfg, "dev"))
+    with pytest.raises(SystemExit):
+        check_no_leakage(cfg, ["ka59"])
+
+
+def test_pretrained_checkpoint_loads_per_seed(tmp_path):
+    import torch
+
+    cfg = Config(algo="dqn")
+    src = OnlineController(cfg, seed=3)
+    (tmp_path / "seed3").mkdir()
+    torch.save(src.state_dict(), tmp_path / "seed3" / "final.pt")
+    ctrl = OnlineController(Config(algo="dqn", init_checkpoint=str(tmp_path / "seed{seed}" / "final.pt")), seed=3)
+    for a, b in zip(src.learner.q.parameters(), ctrl.learner.q.parameters()):
+        assert torch.equal(a, b)
+    ctrl.cfg.reset_weights_per_game = False
+    ctrl.learner.t = 50
+    ctrl.new_game()
+    assert ctrl.learner.t == 0
 
 
 def test_clock_mask_ignores_counter_but_not_movement():

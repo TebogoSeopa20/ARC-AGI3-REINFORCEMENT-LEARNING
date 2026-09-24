@@ -138,12 +138,37 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
 - **Open problem for any next step:** no run in any configuration has completed level 2. Every success is one level-1
   completion, and each game starts from freshly initialised weights, so each game relearns from zero which actions matter.
 
-### Improvement 3 — options (decide before running)
-- **Memory (`*_imp3_memory.yaml`, 4-frame stack):** addresses partial observability within a life. Current evidence does
-  not point to this as the bottleneck.
-- **Cross-game pretraining (`scripts/pretrain.py` + `init_checkpoint`):** addresses the observed problem that every game
-  starts from scratch. Weights are pretrained sequentially on dev games, then evaluated only on held-out games, with online
-  learning continuing. This is also the brief's generalisation question. It must never be scored on dev games.
+### DQN and PPO — improvement 3: cross-game pretraining (`*_imp3_pretrain.yaml`)
+- **Observed limitation:** no run in any version has completed level 2. The few completions unique to improvement 2 arrive
+  late in a game (actions 587–811), and every game starts from freshly initialised weights, so each game spends most of
+  its 1000-action budget relearning, from zero, which kinds of action have effects.
+- **Hypothesis:** weights pretrained across other games encode game-independent regularities (e.g. which action types tend
+  to change the masked frame, or not repeating actions that trigger GAME_OVER). Starting from them, an agent on an unseen
+  game should reach its first completion in fewer actions and complete more levels than improvement 2 from scratch,
+  under the same budget.
+- **Intervention:** `scripts/pretrain.py` trains one network per seed sequentially over the pretraining games
+  (2 passes × 1000 actions per game), keeping weights (and DQN's replay) across games while restarting the exploration
+  schedule and novelty counts per game. Evaluation loads the seed's checkpoint at the start of every unseen game and keeps
+  learning online, exactly as before. DQN starts at ε = 0.3 (decay over 500 actions) so the pretrained values are used.
+  PPO's policy uses the weights directly.
+- **Leakage control:** the 15 dev games are split once (seeded, `configs/pretrain_splits.yaml`) into dev_a (10, pretraining)
+  and dev_b (5, evaluation): cn04, lp85, sk48, su15, tu93. `evaluate.py` refuses to score a game that was used for
+  pretraining, and `pretrain.py` refuses held-out games. The final version (`*_imp3_pretrain_final.yaml`) pretrains on all
+  15 dev games and is scored once on the 10 held-out games.
+- **Comparison:** improvement 2 on the same 5 dev_b games at the same seeds, taken from the existing dev runs
+  (`scripts/compare_splits.py --split dev_b`). Random, baseline and imp1 are included the same way.
+- **Attribution (DQN):** `ablations/dqn_scratch_loweps.yaml` is improvement 2 from scratch with the same ε schedule on dev_b,
+  which separates the pretrained weights from the lower-exploration schedule. PPO has no such confound.
+- **Evidence to check:** levels, and actions to first completion, on dev_b vs imp2 and vs the ε-ablation; distinct frames;
+  completions judged by the rule above (not at the same action index as imp2 with the same seed). Pretraining cost is
+  reported separately from evaluation cost (checkpoint `run_meta.json`, `pretrain_wall_time_s`).
+- **Caveat known in advance:** dev_b has 5 games, 3 of which (sk48, su15, tu93) have never been completed by any agent.
+  A null result on dev_b is therefore weak evidence either way; the held-out run is the real test.
+- **Result:**
+
+### Optional, not in the main chain
+Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra
+experiments if time allows; current evidence does not make either the bottleneck.
 
 ## Failure cases to show in the report
 | Run | Seed | Game | What happened | Evidence |

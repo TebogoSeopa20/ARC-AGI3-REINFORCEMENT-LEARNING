@@ -1,0 +1,7 @@
+# Ablation for DQN improvement 3: same low exploration schedule, no pretrained weights (dev_b).
+# Separates the effect of pretraining from the effect of eps_start 0.3.
+inherit: ../dqn_imp2_clockmask.yaml
+run_name: dqn_abl_scratch_loweps
+split: dev_b
+eps_start: 0.3
+eps_decay_steps: 500

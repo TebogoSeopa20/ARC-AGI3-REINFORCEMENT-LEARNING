@@ -6,8 +6,9 @@ SPLIT="${1:-dev}"
 CONFIGS=(configs/random.yaml
          configs/dqn_baseline.yaml configs/dqn_imp1_explore.yaml configs/dqn_imp2_clockmask.yaml
          configs/ppo_baseline.yaml configs/ppo_imp1_explore.yaml configs/ppo_imp2_clockmask.yaml)
-[[ "${WITH_IMP3:-0}" == "1" ]] && CONFIGS+=(configs/dqn_imp3_memory.yaml configs/ppo_imp3_memory.yaml)
-[[ "${WITH_IMP4:-0}" == "1" ]] && CONFIGS+=(configs/dqn_imp4_objclick.yaml configs/ppo_imp4_objclick.yaml)
+[[ "${WITH_OPT:-0}" == "1" ]] && CONFIGS+=(configs/dqn_opt_memory.yaml configs/ppo_opt_memory.yaml
+                                            configs/dqn_opt_objclick.yaml configs/ppo_opt_objclick.yaml)
+# Improvement 3 uses pretraining and its own splits: see scripts/run_imp3.sh.
 for CFG in "${CONFIGS[@]}"; do
   echo "=== $CFG on $SPLIT ==="
   python scripts/evaluate.py --config "$CFG" --split "$SPLIT"

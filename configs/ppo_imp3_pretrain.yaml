@@ -1,0 +1,6 @@
+# Improvement 3 (development check): pretrain on dev_a, evaluate on dev_b with online learning continuing.
+inherit: ppo_imp2_clockmask.yaml
+run_name: ppo_imp3_pretrain
+pretrain_split: dev_a
+split: dev_b
+init_checkpoint: outputs/checkpoints/ppo_imp3_pretrain/seed{seed}/final.pt
