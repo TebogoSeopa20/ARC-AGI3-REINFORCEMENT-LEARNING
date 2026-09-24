@@ -16,6 +16,17 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 24 Sept | dqn_imp2_clockmask | dqn_imp2_clockmask.yaml | dev | 0,1,2 | 0.113 ± 0.176 | 2.67 ± 0.58 | 26 min | change 0.741, unique 6982; new: r11l s1@811, sp80 s2@587 |
 | 24 Sept | ppo_imp2_clockmask | ppo_imp2_clockmask.yaml | dev | 0,1,2 | 0.003 ± 0.003 | 1.67 ± 0.58 | 9 min | change 0.711, unique 6678; new: sp80 s0@616 |
 
+Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
+
+| Date | Run | Split | Seeds | Score | Levels on dev_b | Distinct frames | Eval time / seed | Pretrain time / seed |
+|---|---|---|---|---|---|---|---|---|
+| 25 Sept | random | dev_b | 0,1,2 | 0.001 | 0.67 ± 0.58 | 1116 | | |
+| 25 Sept | dqn_imp2_clockmask | dev_b | 0,1,2 | 0.014 | 1.00 ± 0.00 | 1406 | | |
+| 25 Sept | dqn_imp3_pretrain | dev_b | 0,1,2 | 0.005 | 1.33 ± 0.58 | 1146 | 5.6 min | 23 min (2 passes × 10 games) |
+| 25 Sept | dqn_abl_scratch_loweps | dev_b | 0,1,2 | 0.009 | 0.33 ± 0.58 | 763 | 5.8 min | |
+| 25 Sept | ppo_imp2_clockmask | dev_b | 0,1,2 | 0.001 | 0.33 ± 0.58 | 1312 | | |
+| 25 Sept | ppo_imp3_pretrain | dev_b | 0,1,2 | 0.000 | 0.33 ± 0.58 | 1748 | 2.3 min | 9.6 min |
+
 Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in any run.
 `change` = share of non-reset actions that changed the frame (mean over games); `unique` = distinct frames per seed
 (summed over games). Reruns reproduced every level, score and game-over count exactly: CPU runs are deterministic
@@ -164,7 +175,33 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   reported separately from evaluation cost (checkpoint `run_meta.json`, `pretrain_wall_time_s`).
 - **Caveat known in advance:** dev_b has 5 games, 3 of which (sk48, su15, tu93) have never been completed by any agent.
   A null result on dev_b is therefore weak evidence either way; the held-out run is the real test.
-- **Result:**
+- **Result, DQN (25 Sept): pretrained weights transfer an exploration prior; no clear gain in levels or efficiency.**
+  - Levels on dev_b 1.00 → 1.33 ± 0.58. The extra level is **su15 seed 0 at action 841, the first su15 completion by
+    any agent in any run**. One event, so suggestive only.
+  - Actions to first completion did not improve: lp85 at 117/289/361 against 375/94/86 for imp2 (mean 256 vs 185).
+  - Attribution: the ε-ablation (same ε = 0.3 schedule, no pretraining) collapses to 0.33 levels and 763 distinct frames.
+    Pretrained weights under that schedule restore 1146 frames and 1.33 levels. The pretrained network therefore carries
+    useful exploratory behaviour into unseen games; without it, low ε alone is harmful.
+  - Against imp2 at ε = 1.0, exploration is lower (1146 vs 1406 frames), so pretraining plus low ε roughly substitutes for
+    random exploration rather than improving on it.
+- **Result, PPO (25 Sept): much broader exploration on unseen games, no gain in levels.**
+  - Distinct frames 1312 → 1748 (+33%), the highest of any run on dev_b. Levels unchanged (0.33; lp85 seed 1 at 706, a
+    new completion; the imp2 completion lp85 seed 2 at 246 disappeared).
+  - The pretrained policy transfers an exploration behaviour, but not a level-completing one.
+- **Pretraining itself did not improve across passes.** Per seed, level completions in pass 1 vs pass 2 were DQN 0/0, 1/1,
+  1/1 and PPO 1/1, 3/1, 1/2, almost all r11l. The network sees a level reward about once per 10 000 actions, so what it
+  learns across games is an exploration prior, not knowledge of goals.
+- **Cost:** DQN pretraining ≈ 23 min per seed and PPO ≈ 9.6 min per seed on the Mac CPU, reported separately from
+  evaluation (DQN 5.6 min, PPO 2.3 min per seed on dev_b).
+- **Conclusion for the report:** improvement 3 answers the generalisation question with a clear, partly negative finding.
+  Game-independent exploration behaviour transfers across ARC-AGI-3 games (strong for PPO, and it rescues low-ε DQN);
+  level-completing behaviour does not, because level rewards are too rare during pretraining to learn from.
+
+### Decision on improvement 4 (25 Sept): stop here
+The criterion set before running improvement 3 was: pursue efficiency if pretraining gives faster first completions.
+It did not (lp85 mean 256 vs 185 actions). The remaining limitation, level rewards almost never observed, is the same one
+improvements 1–3 already target. No new, specific limitation motivates a fourth method, so the investigation moves to
+ablations, held-out evaluation, the Kaggle submission and the report.
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra

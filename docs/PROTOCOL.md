@@ -44,3 +44,5 @@ Any unavoidable change gets a dated entry in the change log below.
 | Date | Change | Reason |
 |---|---|---|
 | 23 Sept 2026 | Protocol frozen; splits generated | Phase 1 |
+| 24 Sept 2026 | Added `configs/pretrain_splits.yaml`: dev split into dev_a (10, pretraining) and dev_b (5, check), seed 2026 | Improvement 3 must be checked on games not used for pretraining without touching held-out games |
+| 24 Sept 2026 | Improvement 3 DQN uses ε 0.3 → 0.05 over 500 actions (others 1.0 → 0.05 over 1000); `ablations/dqn_scratch_loweps.yaml` controls for it | Starting from pretrained weights |
