@@ -19,6 +19,8 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 25 Sept | dqn_abl_no_change | ablations/dqn_final_no_change.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 17 min | unique 6803 |
 | 25 Sept | ppo_abl_no_novelty | ablations/ppo_final_no_novelty.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6793; new: cn04 s2@971 |
 | 25 Sept | ppo_abl_no_change | ablations/ppo_final_no_change.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6427 |
+| 26 Sept | dqn_imp4_efficient | dqn_imp4_efficient.yaml | dev | 0,1,2 | 0.138 ± 0.156 | 3.00 ± 1.00 | 29 min | unique 9962, effect rate 0.65 |
+| 26 Sept | ppo_imp4_efficient | ppo_imp4_efficient.yaml | dev | 0,1,2 | 0.027 ± 0.029 | 4.00 ± 1.73 | 9 min | unique 9819, effect rate 0.63; first level 2 (tu93) |
 
 Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
 
@@ -261,7 +263,34 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
   levels and actions to first completion, and official score against improvement 2 and random on all 15 dev games,
   3 seeds; then the three single-component ablations per algorithm (`ablations/*_imp4_no_*.yaml`).
   Completions are judged with the shared-luck rule.
-- **Result:**
+- **Result (26 Sept, dev, 3 seeds): the largest change of the investigation, strongest for PPO.**
+
+  | Run | Levels (per seed) | Distinct frames | Score | Effect rate |
+  |---|---|---|---|---|
+  | random | 1.67 (2, 2, 1) | 5922 | 0.010 | |
+  | dqn_imp2_clockmask | 2.67 (3, 2, 3) | 6982 | 0.113 | |
+  | **dqn_imp4_efficient** | **3.00 (4, 2, 3)** | **9962** | **0.138** | 0.65 |
+  | ppo_imp2_clockmask | 1.67 (2, 1, 2) | 6678 | 0.003 | |
+  | **ppo_imp4_efficient** | **4.00 (6, 3, 3)** | **9819** | **0.027** | 0.63 |
+
+  - **Exploration:** distinct frames +43% for DQN and +47% for PPO, rising in 13 of 15 games for both. The largest gains
+    are in click and tick games: s5i5 300 → 792, sc25 417 → 775, tn36 363 → 809, cn04 395 → 797 (DQN). ls20 and re86 were
+    already near the action count.
+  - **PPO levels:** every seed (6, 3, 3) is at or above the best imp2 seed (2). Non-overlapping across seeds, the clearest
+    level effect in the study. Score 0.003 → 0.027.
+  - **First level 2 of the investigation:** PPO seed 0 completed tu93 levels 1 and 2 at actions 652 and 702, the second
+    level 50 actions after the first (human baseline 16).
+  - **Games never completed before:** s5i5 (DQN seeds 0 and 2 at 291 and 652; PPO seeds 0 and 1 at 916 and 144),
+    sc25 (DQN seed 1 at 656), tu93 (PPO). PPO completed sp80 in all 3 seeds (440–488).
+  - **DQN:** levels 2.67 → 3.00 (within noise), score 0.113 → 0.138. r11l is now completed early in every seed (76, 52, 18);
+    seed 2 at 18 actions beats the 22-action human baseline for that level (level score 4.76).
+  - **Where it did not help:** lp85 completions fell for DQN (3 → 2) and su15 exploration dropped (355 → 290). lp85 has a
+    0.13–0.27 effect rate and the most pruned choices (838–943), which suggests pruning or object clicks may cut off its
+    working actions. The ablations will test this.
+  - **Caveat on early completions:** the shared-luck rule cannot be applied, because the action space changed, so early
+    action streams differ from imp2's. The r11l completions at 18–76 actions could be luck of the new action abstraction.
+    `configs/random_imp4_actions.yaml` (random choice over the same abstraction, no learning) is the control for this.
+  - **Cost:** wall time per seed similar to imp2 (DQN 29 min, PPO 9 min).
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra

@@ -1,0 +1,9 @@
+# Reference: uniform random choice over improvement 4's action abstraction (16x16 object-aware clicks,
+# no-effect pruning with clock mask), no learning. Separates the action abstraction from what DQN/PPO learn.
+inherit: base.yaml
+run_name: random_imp4_actions
+algo: random
+clock_mask: true
+prune_noeffect: true
+click_grid: 16
+object_clicks: true
