@@ -49,6 +49,10 @@ class Config:
     effect_bias: float = 1.0
     prune_noeffect: bool = False
 
+    # Improvement 5: return-then-explore over a per-game state graph
+    graph_explore: bool = False
+    clock_mask_timed: bool = False
+
     # Shared learner hparams
     gamma: float = 0.95
     lr: float = 2.5e-4

@@ -1,5 +1,8 @@
-# Config baked into the Kaggle notebook by scripts/build_notebook.py. Point inherit at the final agent.
-inherit: dqn_imp2_clockmask.yaml
+# Config baked into the Kaggle notebook by scripts/build_notebook.py.
+# Current choice, on dev results only (26 Sept): PPO improvement 4 (4.00 levels, seeds 6/3/3; the only level 2).
+# Revisit after improvement 5 results; the choice must be made on dev, never on held-out results.
+# Budget matches the evaluated protocol (1000 actions per game); lower it only if the Kaggle rerun times out.
+inherit: ppo_imp4_efficient.yaml
 run_name: submission
-max_actions_per_game: 400
+max_actions_per_game: 1000
 seeds: [0]

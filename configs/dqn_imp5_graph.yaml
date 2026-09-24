@@ -1,0 +1,8 @@
+# Improvement 5: return-then-explore over a per-game state graph (Go-Explore style), on top of improvement 4.
+# The learner picks among untried actions; known dead ends are skipped by following the shortest known path to
+# the nearest state with untried actions (also after RESET). Graph actions replace no-effect pruning.
+inherit: dqn_imp4_efficient.yaml
+run_name: dqn_imp5_graph
+graph_explore: true
+prune_noeffect: false
+clock_mask_timed: true

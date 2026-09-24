@@ -23,20 +23,28 @@ MASK_VALUE = 16
 
 
 class ClockMask:
-    def __init__(self, min_repeats: int = 2):
+    """timed=True (improvement 5) also requires each repeat to happen at the same action index within a life,
+    so a counter that ticks once per action is masked, but progress the agent causes at varying times is not."""
+
+    def __init__(self, min_repeats: int = 2, timed: bool = False):
         self.min_repeats = min_repeats
+        self.timed = timed
         self.src = np.full((64, 64), -1, np.int16)
         self.dst = np.full((64, 64), -1, np.int16)
+        self.when = np.full((64, 64), -1, np.int32)
         self.count = np.zeros((64, 64), np.int32)
         self.bad = np.zeros((64, 64), bool)
 
-    def update(self, prev: np.ndarray, grid: np.ndarray) -> None:
+    def update(self, prev: np.ndarray, grid: np.ndarray, t: int | None = None) -> None:
         d = prev != grid
         if not d.any():
             return
         new = d & (self.src < 0)
         self.src[new], self.dst[new] = prev[new], grid[new]
         same = d & (self.src == prev) & (self.dst == grid)
+        if self.timed and t is not None:
+            self.when[new] = t
+            same &= self.when == t
         self.count[same] += 1
         self.bad |= d & ~same
 
@@ -57,7 +65,7 @@ class RewardShaper:
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.counts: Counter[bytes] = Counter()
-        self.clock = ClockMask() if cfg.clock_mask else None
+        self.clock = ClockMask(timed=cfg.clock_mask_timed) if cfg.clock_mask else None
         self.last_changed = False
 
     def key(self, grid: np.ndarray) -> bytes:
@@ -65,9 +73,10 @@ class RewardShaper:
 
     def reset_game(self) -> None:
         self.counts.clear()
-        self.clock = ClockMask() if self.cfg.clock_mask else None
+        self.clock = ClockMask(timed=self.cfg.clock_mask_timed) if self.cfg.clock_mask else None
 
-    def __call__(self, prev_grid: np.ndarray, grid: np.ndarray, d_levels: int, game_over: bool) -> tuple[float, dict]:
+    def __call__(self, prev_grid: np.ndarray, grid: np.ndarray, d_levels: int, game_over: bool,
+                 t: int | None = None) -> tuple[float, dict]:
         c = self.cfg
         parts = {"level": c.level_reward * d_levels}
         if game_over:
@@ -75,7 +84,7 @@ class RewardShaper:
         p, g = prev_grid, grid
         if self.clock is not None:
             if d_levels == 0:
-                self.clock.update(prev_grid, grid)
+                self.clock.update(prev_grid, grid, t)
             p, g = self.clock.apply(prev_grid), self.clock.apply(grid)
         self.last_changed = d_levels > 0 or not np.array_equal(p, g)
         if c.change_bonus:

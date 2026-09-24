@@ -1,0 +1,7 @@
+# Control: random choice among untried actions with the same graph navigation, no learning.
+# Separates the search structure from what DQN/PPO learn.
+inherit: random_imp4_actions.yaml
+run_name: random_imp5_graph
+graph_explore: true
+prune_noeffect: false
+clock_mask_timed: true

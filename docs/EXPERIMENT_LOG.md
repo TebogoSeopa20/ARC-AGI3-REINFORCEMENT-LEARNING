@@ -21,6 +21,8 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 25 Sept | ppo_abl_no_change | ablations/ppo_final_no_change.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6427 |
 | 26 Sept | dqn_imp4_efficient | dqn_imp4_efficient.yaml | dev | 0,1,2 | 0.138 ± 0.156 | 3.00 ± 1.00 | 29 min | unique 9962, effect rate 0.65 |
 | 26 Sept | ppo_imp4_efficient | ppo_imp4_efficient.yaml | dev | 0,1,2 | 0.027 ± 0.029 | 4.00 ± 1.73 | 9 min | unique 9819, effect rate 0.63; first level 2 (tu93) |
+| 26 Sept | random_imp4_actions | random_imp4_actions.yaml | dev | 0,1,2 | 0.235 ± 0.144 | 1.33 ± 0.58 | 1 min | control; score from r11l at 7/12 actions |
+| 26 Sept | imp4 ablations (6 runs) | ablations/*_imp4_no_*.yaml | dev | 0,1,2 | see improvement 4 ablations | | | |
 
 Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
 
@@ -291,6 +293,71 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
     action streams differ from imp2's. The r11l completions at 18–76 actions could be luck of the new action abstraction.
     `configs/random_imp4_actions.yaml` (random choice over the same abstraction, no learning) is the control for this.
   - **Cost:** wall time per seed similar to imp2 (DQN 29 min, PPO 9 min).
+
+### Improvement 4 — ablations and random control (26 Sept, dev, 3 seeds)
+
+| Run | Levels (per seed) | Levels excl. r11l | Distinct frames | Score | Score excl. r11l |
+|---|---|---|---|---|---|
+| random | 1.67 (2, 2, 1) | 0.67 | 5922 | 0.010 | 0.000 |
+| random_imp4_actions (no learning) | 1.33 (1, 2, 1) | 0.33 | 8025 | **0.235** | 0.001 |
+| dqn_imp4_efficient | 3.00 (4, 2, 3) | 2.00 | 9962 | 0.138 | 0.005 |
+| dqn − effect head | 3.00 (4, 3, 2) | 2.00 | 9417 | 0.054 | 0.003 |
+| dqn − pruning | 3.00 (4, 3, 2) | 2.00 | 9393 | 0.139 | 0.006 |
+| dqn − object clicks | 2.67 (2, 3, 3) | 1.67 | 8425 | 0.056 | 0.005 |
+| ppo_imp4_efficient | **4.00 (6, 3, 3)** | **3.00** | 9819 | 0.027 | **0.014** |
+| ppo − effect head | 2.00 (2, 2, 2) | 1.00 | 8757 | 0.061 | 0.001 |
+| ppo − pruning | 3.00 (3, 2, 4) | 2.00 | 9318 | 0.016 | 0.004 |
+| ppo − object clicks | 3.33 (3, 3, 4) | 2.33 | 8214 | 0.200 | 0.004 |
+
+- **Learning, not the abstraction, produces the level gains.** Random choice over the same action abstraction completes
+  1.33 levels (0.33 excluding r11l). PPO imp4's worst seed (3) is above the control's best (2); DQN imp4 is above it in
+  every seed but one.
+- **The abstraction explains about half of the exploration gain:** distinct frames 5922 (random) → 8025 (random over
+  imp4 actions) → about 9900 (learners).
+- **PPO: the effect head is the key component.** Removing it halves levels (4.00 → 2.00, seeds non-overlapping) and
+  removes all s5i5, tu93 and cn04 progress. Pruning and object clicks each account for about one level, within noise.
+  tu93 level 2 appears only with all three components.
+- **DQN: no single component changes levels** (2.67–3.00). Object clicks carry exploration (9962 → 8425; s5i5 792 → 404,
+  tn36 809 → 367 without them) and every s5i5/sc25 completion. DQN without the effect head completed su15 in 2 seeds
+  (713, 720), the first su15 completions from scratch. The lp85 drop noted above is noise: each ablation restores it to 3.
+- **The official score cannot rank agents on dev.** The control scores highest (0.235) because it completed r11l level 1
+  in 7 and 12 actions. Such a completion reaches the maximum score available from level 1 (100/Σweights = 4.76 per game),
+  so one lucky early completion outweighs everything else. Excluding r11l, every run scores ≤ 0.014 and PPO imp4 is best.
+  Report levels, levels excluding r11l, and score excluding r11l alongside the official score.
+- **Submission choice (dev only):** PPO imp4. It has the most levels, the only level 2, is best excluding r11l on both
+  measures, and runs about 3× faster than DQN (9 vs 29 min per seed), which matters for Kaggle's time limit.
+
+### DQN and PPO — improvement 5: return-then-explore over a state graph (`*_imp5_graph.yaml`)
+- **Observed limitation:** even with improvement 4, agents spend most of the budget re-deciding in states whose actions
+  they have already tried, and lose all progress at each GAME_OVER: after RESET they must rediscover the path to where
+  they were. In 8 dev games lives end on a fixed move count (fixed-clock game-overs, 4–19 per 1000 actions), so a life is
+  too short to both return and explore by chance. No-effect pruning (imp4) only removes actions that did nothing.
+- **Hypothesis:** if the agent never repeats an action whose outcome it already knows, and returns along the shortest known
+  path to the nearest state with untried actions (including after RESET), it covers more of each game per action. It
+  should complete more levels, and more second levels, than improvement 4 under the same budget.
+- **Intervention:** a per-game `StateGraph` (src/arcrl/agents/graph.py). Nodes are (levels, clock-masked frame hash).
+  It stores legal actions, tried actions and observed outcomes (next node or GAME_OVER). In a node with untried legal
+  actions, DQN/PPO choose among the untried ones only. In an exhausted node, the controller takes the first action of
+  the shortest known path to the nearest node with untried actions. This is Go-Explore's "first return, then explore"
+  (Ecoffet et al., 2021), with return by replaying known transitions instead of restoring emulator state. The learner
+  sees a semi-MDP: one transition per learner decision, with the undiscounted sum of shaped rewards until its next
+  decision. PPO therefore stays on-policy, and DQN stores only its own choices.
+- **Needed fix found in testing: timed clock mask.** The original ClockMask also masks progress markers the agent changes
+  once per life (a documented false positive). For the graph this is fatal: different progress states merge into one
+  node. The timed variant additionally requires each repeat to happen at the same action index within a life, which a
+  per-action counter satisfies and agent-caused progress does not. Only improvement 5 uses it (`clock_mask_timed`).
+- **Assumption measured, not assumed:** transitions are treated as deterministic. Every repeated (node, action) is
+  logged as consistent or inconsistent (`transitions_consistent` / `transitions_inconsistent`). A GAME_OVER never
+  overwrites a known live outcome, because with the counter masked, running out of moves looks like a fatal action.
+- **Checks before real games:** on a deterministic combination-lock test (7 presses in a row, 12 moves per life, 400
+  actions), plain random solved 1 of 6 locks; random with the graph solved 6 of 6 (37–114 actions), DQN with the graph
+  6 of 6, PPO with the graph 5 of 6. DQN/PPO decision counts and stored transitions match exactly (tests/test_graph.py).
+  Baseline, imp2 and imp4 configs reproduce the previous code bit for bit.
+- **Controls:** `random_imp5_graph.yaml` (graph with random choice among untried actions, no learning) separates search
+  from learning. `ablations/*_imp5_no_graph.yaml` (imp4 + timed mask, no graph) separates the graph from the mask change.
+- **Reporting caveat:** improvement 5 is hybrid; the search structure does part of the work. The comparison that answers
+  the course question is DQN vs PPO under the same graph, and each learner vs the random-with-graph control.
+- **Result:**
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra

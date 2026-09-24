@@ -1,0 +1,6 @@
+# Ablation: improvement 5 without the state graph, i.e. improvement 4 plus the timed clock mask.
+# Separates graph navigation from the change in clock masking.
+inherit: ../ppo_imp5_graph.yaml
+run_name: ppo_abl_imp5_no_graph
+graph_explore: false
+prune_noeffect: true
