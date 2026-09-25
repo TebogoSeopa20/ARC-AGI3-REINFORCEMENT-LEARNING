@@ -15,25 +15,28 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 24 Sept | ppo_imp1_explore | ppo_imp1_explore.yaml | dev | 0,1,2 | 0.003 ± 0.002 | 1.33 ± 0.58 | 17 min | change 0.712, unique 6356 |
 | 24 Sept | dqn_imp2_clockmask | dqn_imp2_clockmask.yaml | dev | 0,1,2 | 0.113 ± 0.176 | 2.67 ± 0.58 | 26 min | change 0.741, unique 6982; new: r11l s1@811, sp80 s2@587 |
 | 24 Sept | ppo_imp2_clockmask | ppo_imp2_clockmask.yaml | dev | 0,1,2 | 0.003 ± 0.003 | 1.67 ± 0.58 | 9 min | change 0.711, unique 6678; new: sp80 s0@616 |
-| 25 Sept | dqn_abl_no_novelty | ablations/dqn_final_no_novelty.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 16 min | unique 6612 |
-| 25 Sept | dqn_abl_no_change | ablations/dqn_final_no_change.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 17 min | unique 6803 |
-| 25 Sept | ppo_abl_no_novelty | ablations/ppo_final_no_novelty.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6793; new: cn04 s2@971 |
-| 25 Sept | ppo_abl_no_change | ablations/ppo_final_no_change.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6427 |
-| 26 Sept | dqn_imp4_efficient | dqn_imp4_efficient.yaml | dev | 0,1,2 | 0.138 ± 0.156 | 3.00 ± 1.00 | 29 min | unique 9962, effect rate 0.65 |
-| 26 Sept | ppo_imp4_efficient | ppo_imp4_efficient.yaml | dev | 0,1,2 | 0.027 ± 0.029 | 4.00 ± 1.73 | 9 min | unique 9819, effect rate 0.63; first level 2 (tu93) |
-| 26 Sept | random_imp4_actions | random_imp4_actions.yaml | dev | 0,1,2 | 0.235 ± 0.144 | 1.33 ± 0.58 | 1 min | control; score from r11l at 7/12 actions |
-| 26 Sept | imp4 ablations (6 runs) | ablations/*_imp4_no_*.yaml | dev | 0,1,2 | see improvement 4 ablations | | | |
+| 24 Sept | dqn_abl_no_novelty | ablations/dqn_final_no_novelty.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 16 min | unique 6612 |
+| 24 Sept | dqn_abl_no_change | ablations/dqn_final_no_change.yaml | dev | 0,1,2 | 0.110 | 2.33 ± 0.58 | 17 min | unique 6803 |
+| 24 Sept | ppo_abl_no_novelty | ablations/ppo_final_no_novelty.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6793; new: cn04 s2@971 |
+| 24 Sept | ppo_abl_no_change | ablations/ppo_final_no_change.yaml | dev | 0,1,2 | 0.003 | 2.00 ± 1.00 | 7 min | unique 6427 |
+| 24 Sept | dqn_imp4_efficient | dqn_imp4_efficient.yaml | dev | 0,1,2 | 0.138 ± 0.156 | 3.00 ± 1.00 | 29 min | unique 9962, effect rate 0.65 |
+| 24 Sept | ppo_imp4_efficient | ppo_imp4_efficient.yaml | dev | 0,1,2 | 0.027 ± 0.029 | 4.00 ± 1.73 | 9 min | unique 9819, effect rate 0.63; first level 2 (tu93) |
+| 24 Sept | random_imp4_actions | random_imp4_actions.yaml | dev | 0,1,2 | 0.235 ± 0.144 | 1.33 ± 0.58 | 1 min | control; score from r11l at 7/12 actions |
+| 24 Sept | imp4 ablations (6 runs) | ablations/*_imp4_no_*.yaml | dev | 0,1,2 | see improvement 4 ablations | | | |
+| 25 Sept | random_imp5_graph | random_imp5_graph.yaml | dev | 0,1,2 | 0.236 ± 0.142 | 2.67 ± 1.15 | 1 min | control; graph without learning |
+| 25 Sept | dqn_imp5_graph | dqn_imp5_graph.yaml | dev | 0,1,2 | 0.141 ± 0.154 | 4.67 ± 1.53 | 21 min | 2 × tu93 level 2; determinism 98.6% |
+| 25 Sept | ppo_imp5_graph | ppo_imp5_graph.yaml | dev | 0,1,2 | 0.070 ± 0.075 | 5.00 ± 1.00 | 11 min | 2 × tu93 level 2; determinism 98.6% |
 
 Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
 
 | Date | Run | Split | Seeds | Score | Levels on dev_b | Distinct frames | Eval time / seed | Pretrain time / seed |
 |---|---|---|---|---|---|---|---|---|
-| 25 Sept | random | dev_b | 0,1,2 | 0.001 | 0.67 ± 0.58 | 1116 | | |
-| 25 Sept | dqn_imp2_clockmask | dev_b | 0,1,2 | 0.014 | 1.00 ± 0.00 | 1406 | | |
-| 25 Sept | dqn_imp3_pretrain | dev_b | 0,1,2 | 0.005 | 1.33 ± 0.58 | 1146 | 5.6 min | 23 min (2 passes × 10 games) |
-| 25 Sept | dqn_abl_scratch_loweps | dev_b | 0,1,2 | 0.009 | 0.33 ± 0.58 | 763 | 5.8 min | |
-| 25 Sept | ppo_imp2_clockmask | dev_b | 0,1,2 | 0.001 | 0.33 ± 0.58 | 1312 | | |
-| 25 Sept | ppo_imp3_pretrain | dev_b | 0,1,2 | 0.000 | 0.33 ± 0.58 | 1748 | 2.3 min | 9.6 min |
+| 24 Sept | random | dev_b | 0,1,2 | 0.001 | 0.67 ± 0.58 | 1116 | | |
+| 24 Sept | dqn_imp2_clockmask | dev_b | 0,1,2 | 0.014 | 1.00 ± 0.00 | 1406 | | |
+| 24 Sept | dqn_imp3_pretrain | dev_b | 0,1,2 | 0.005 | 1.33 ± 0.58 | 1146 | 5.6 min | 23 min (2 passes × 10 games) |
+| 24 Sept | dqn_abl_scratch_loweps | dev_b | 0,1,2 | 0.009 | 0.33 ± 0.58 | 763 | 5.8 min | |
+| 24 Sept | ppo_imp2_clockmask | dev_b | 0,1,2 | 0.001 | 0.33 ± 0.58 | 1312 | | |
+| 24 Sept | ppo_imp3_pretrain | dev_b | 0,1,2 | 0.000 | 0.33 ± 0.58 | 1748 | 2.3 min | 9.6 min |
 
 Budget: 1000 actions per game, 15 dev games, 15 000 actions per seed. No wins in any run.
 `change` = share of non-reset actions that changed the frame (mean over games); `unique` = distinct frames per seed
@@ -99,7 +102,7 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   - Levels (1.33) and score (0.003) are unchanged.
   - The hypothesis that PPO would gain more than DQN is rejected: DQN moved more on every exploration metric.
 
-### Ablations of improvement 2 (25 Sept, dev, 3 seeds; each removes one shaping term, clock mask kept)
+### Ablations of improvement 2 (24 Sept, dev, 3 seeds; each removes one shaping term, clock mask kept)
 
 | Run | Levels (per seed) | Distinct frames | Score |
 |---|---|---|---|
@@ -208,7 +211,7 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   reported separately from evaluation cost (checkpoint `run_meta.json`, `pretrain_wall_time_s`).
 - **Caveat known in advance:** dev_b has 5 games, 3 of which (sk48, su15, tu93) have never been completed by any agent.
   A null result on dev_b is therefore weak evidence either way; the held-out run is the real test.
-- **Result, DQN (25 Sept): pretrained weights transfer an exploration prior; no clear gain in levels or efficiency.**
+- **Result, DQN (24 Sept): pretrained weights transfer an exploration prior; no clear gain in levels or efficiency.**
   - Levels on dev_b 1.00 → 1.33 ± 0.58. The extra level is **su15 seed 0 at action 841, the first su15 completion by
     any agent in any run**. One event, so suggestive only.
   - Actions to first completion did not improve: lp85 at 117/289/361 against 375/94/86 for imp2 (mean 256 vs 185).
@@ -217,7 +220,7 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
     useful exploratory behaviour into unseen games; without it, low ε alone is harmful.
   - Against imp2 at ε = 1.0, exploration is lower (1146 vs 1406 frames), so pretraining plus low ε roughly substitutes for
     random exploration rather than improving on it.
-- **Result, PPO (25 Sept): much broader exploration on unseen games, no gain in levels.**
+- **Result, PPO (24 Sept): much broader exploration on unseen games, no gain in levels.**
   - Distinct frames 1312 → 1748 (+33%), the highest of any run on dev_b. Levels unchanged (0.33; lp85 seed 1 at 706, a
     new completion; the imp2 completion lp85 seed 2 at 246 disappeared).
   - The pretrained policy transfers an exploration behaviour, but not a level-completing one.
@@ -230,7 +233,7 @@ under fixed seeds. Wall time varies ±40% between runs on the same laptop, so co
   Game-independent exploration behaviour transfers across ARC-AGI-3 games (strong for PPO, and it rescues low-ε DQN);
   level-completing behaviour does not, because level rewards are too rare during pretraining to learn from.
 
-### Decision on improvement 4 (25 Sept, revised the same day)
+### Decision on improvement 4 (24 Sept, revised the same day)
 The first decision was to stop, because pretraining did not give faster first completions. It was revised after
 comparing against published ARC-AGI-3 agents, which surfaced a limitation the log had measured but not acted on.
 - Context: frontier LLMs score below 1% on ARC-AGI-3. The preview winner StochasticGoose (a CNN that learns which actions
@@ -265,7 +268,7 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
   levels and actions to first completion, and official score against improvement 2 and random on all 15 dev games,
   3 seeds; then the three single-component ablations per algorithm (`ablations/*_imp4_no_*.yaml`).
   Completions are judged with the shared-luck rule.
-- **Result (26 Sept, dev, 3 seeds): the largest change of the investigation, strongest for PPO.**
+- **Result (24 Sept, dev, 3 seeds): the largest change of the investigation, strongest for PPO.**
 
   | Run | Levels (per seed) | Distinct frames | Score | Effect rate |
   |---|---|---|---|---|
@@ -294,7 +297,7 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
     `configs/random_imp4_actions.yaml` (random choice over the same abstraction, no learning) is the control for this.
   - **Cost:** wall time per seed similar to imp2 (DQN 29 min, PPO 9 min).
 
-### Improvement 4 — ablations and random control (26 Sept, dev, 3 seeds)
+### Improvement 4 — ablations and random control (24 Sept, dev, 3 seeds)
 
 | Run | Levels (per seed) | Levels excl. r11l | Distinct frames | Score | Score excl. r11l |
 |---|---|---|---|---|---|
@@ -357,7 +360,46 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
   from learning. `ablations/*_imp5_no_graph.yaml` (imp4 + timed mask, no graph) separates the graph from the mask change.
 - **Reporting caveat:** improvement 5 is hybrid; the search structure does part of the work. The comparison that answers
   the course question is DQN vs PPO under the same graph, and each learner vs the random-with-graph control.
-- **Result:**
+- **Decision rule, fixed before the results (24 Sept):** beats imp4 and random-with-graph on levels → full improvement,
+  and the submission if it also beats PPO imp4; beats imp4 but random-with-graph matches it → report that the search does
+  the work; no gain → short negative result.
+- **Result (25 Sept, dev, 3 seeds): the largest level gain for DQN, and the most second levels of any run.**
+
+  | Run | Levels (per seed) | Levels excl. r11l | Level-2 completions | Distinct frames | Score | Score excl. r11l |
+  |---|---|---|---|---|---|---|
+  | random_imp4_actions | 1.33 (1, 2, 1) | 0.33 | 0 | 8025 | 0.235 | 0.001 |
+  | random_imp5_graph (no learning) | 2.67 (4, 2, 2) | 1.67 | 1 | 8462 | 0.236 | 0.002 |
+  | dqn_imp4_efficient | 3.00 (4, 2, 3) | 2.00 | 0 | 9962 | 0.138 | 0.005 |
+  | **dqn_imp5_graph** | **4.67 (6, 5, 3)** | **3.67** | **2** | 9954 | 0.141 | 0.007 |
+  | ppo_imp4_efficient | 4.00 (6, 3, 3) | 3.00 | 1 | 9819 | 0.027 | 0.014 |
+  | **ppo_imp5_graph** | **5.00 (4, 5, 6)** | **4.00** | **2** | 9787 | 0.070 | 0.003 |
+
+  - **DQN: +1.67 levels over imp4** (3.00 → 4.67), levels excluding r11l 2.00 → 3.67. The worst imp5 seed (3) equals the
+    imp4 mean. **PPO: +1.00** (4.00 → 5.00); its worst seed (4) is above the imp4 median (3).
+  - **Learning still adds beyond the search.** Random with the graph reaches 2.67 levels (1.33 without it). DQN and PPO with
+    the graph reach 4.67 and 5.00. Per seed, PPO's worst (4) equals the control's best (4), and DQN's worst (3) is below the
+    control's best (4). The learner effect is consistent in the mean but overlaps at the extremes.
+  - **Where it helped: tu93, the one game where return navigation is active.** tu93 levels, summed over seeds: imp4 DQN 0 /
+    PPO 2 → imp5 DQN 4 / PPO 5 / random-with-graph 3. Level 2 was reached in 2 of 3 seeds for both DQN and PPO (e.g. PPO
+    seed 1 at actions 403 and 599). 15% of tu93 actions were planned returns, against 1.6–1.8% over all games. DQN also
+    gained lp85 (2 → 3), PPO lost none.
+  - **Mechanism elsewhere is "never repeat a tried action", not navigation.** Over all games, only 1.6% (DQN), 1.8% (PPO)
+    and 1.8% (random) of actions were planned returns. Click games have up to 262 legal actions per state, so states are
+    rarely exhausted within 1000 actions, and the graph acts as a stricter version of imp4's no-effect pruning. The
+    `*_imp5_no_graph` ablation separates the two.
+  - **Determinism assumption holds:** 98.6% of repeated (state, action) pairs led to the same next state (DQN 1367/1386,
+    PPO 794/805, random 1329/1346). Inconsistencies concentrate in tu93 (move-budget game-overs) and sk48.
+  - **Fallback decisions** (exhausted state with no reachable untried state) occur only in tu93, for DQN (665 in total) and
+    random (541), never for PPO. With the move counter masked, a life can run out before the return path completes.
+  - **Official score is unchanged in substance.** Excluding r11l, all imp5 scores are ≤ 0.007: second-level completions
+    take 200–490 actions against a 16-action human baseline, so they add almost nothing to the efficiency-weighted score.
+    PPO imp5 is lower than PPO imp4 excluding r11l (0.003 vs 0.014) because its sp80 completions came later (416–956 vs
+    440–488).
+  - **Cost:** DQN 21 min, PPO 11 min per seed; the graph adds no measurable overhead (DQN is faster than imp4 because
+    planned steps skip learner updates).
+- **Decision under the fixed rule:** improvement 5 beats imp4 for both algorithms and beats random-with-graph in the mean,
+  so it goes into the report as a full improvement. **Submission: PPO imp5** (most levels, 5.00; most second levels;
+  3× faster than DQN). This is chosen on levels, not dev score, because the dev score is dominated by r11l luck.
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra

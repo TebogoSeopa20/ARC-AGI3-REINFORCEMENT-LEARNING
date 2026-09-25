@@ -1,8 +1,8 @@
 # Config baked into the Kaggle notebook by scripts/build_notebook.py.
-# Current choice, on dev results only (26 Sept): PPO improvement 4 (4.00 levels, seeds 6/3/3; the only level 2).
-# Revisit after improvement 5 results; the choice must be made on dev, never on held-out results.
+# Chosen on dev results only (25 Sept) under the rule fixed before improvement 5 ran:
+# PPO improvement 5 completed the most levels (5.00, seeds 4/5/6) and reached level 2 in 2 of 3 seeds.
 # Budget matches the evaluated protocol (1000 actions per game); lower it only if the Kaggle rerun times out.
-inherit: ppo_imp4_efficient.yaml
+inherit: ppo_imp5_graph.yaml
 run_name: submission
 max_actions_per_game: 1000
 seeds: [0]
