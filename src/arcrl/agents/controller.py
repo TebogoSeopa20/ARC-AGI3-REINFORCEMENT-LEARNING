@@ -82,6 +82,7 @@ class OnlineController:
             self._close(obs, done=True)
             self.stack.clear()
             self.prev = None
+            self.life_t = 0
             return GameAction.RESET, None
         s = self.stack.push(obs.grid)
         mask = self.actions.mask(obs.available, obs.grid)
@@ -114,7 +115,8 @@ class OnlineController:
         if s2 is None:
             s2 = self.stack.push(obs.grid) if self.stack.buf else np.repeat(obs.grid[None], self.cfg.frame_stack, 0)
             m2 = np.ones(self.actions.n, bool)
-        r, _ = self.shaper(pgrid, obs.grid, max(0, obs.levels - plev), obs.state == "GAME_OVER")
+        self.life_t += 1
+        r, _ = self.shaper(pgrid, obs.grid, max(0, obs.levels - plev), obs.state == "GAME_OVER", t=self.life_t)
         changed = self.shaper.last_changed
         self.shaped_return += r
         self.steps += 1

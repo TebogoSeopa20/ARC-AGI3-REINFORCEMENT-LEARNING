@@ -401,6 +401,18 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
   so it goes into the report as a full improvement. **Submission: PPO imp5** (most levels, 5.00; most second levels;
   3× faster than DQN). This is chosen on levels, not dev score, because the dev score is dominated by r11l luck.
 
+### Improvement 5 — ablation without the graph (25 Sept)
+- **First run invalid (bug found from the result).** `*_abl_imp5_no_graph` (imp4 + timed clock mask, no graph) reproduced
+  imp4 exactly: same levels per seed (DQN 4/2/3, PPO 6/3/3), same completion times, same distinct frames in every game.
+  Cause: the timed mask needs the action index within a life, which only the graph path passed to the shaper. Without it
+  the mask fell back to the untimed rule, so the ablation was imp4 under another name.
+- **Fix:** the non-graph path now also tracks the action index within a life and passes it to the shaper. Configs without
+  `clock_mask_timed` are unaffected (bit-for-bit reproduction re-checked for baseline, imp2 and imp4). The graph path is
+  unchanged, so imp5 results stand. Test added (`test_timed_clock_mask_is_active_without_graph`).
+- **What the invalid run still shows:** imp4 is reproducible run to run on the same machine and seeds (all numbers identical).
+- **Rerun:** pending (`--overwrite`).
+- **Result:**
+
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra
 experiments if time allows; current evidence does not make either the bottleneck.

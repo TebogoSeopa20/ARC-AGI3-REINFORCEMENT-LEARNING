@@ -104,3 +104,11 @@ def test_graph_mode_learners_run_and_update():
         assert decisions > 0 and decisions + ctrl.planned_steps + r["resets"] == r["actions"]
         stored = len(ctrl.learner.buf) if algo == "dqn" else len(ctrl.learner.S) + ctrl.learner.t // 16 * 16
         assert stored == decisions
+
+
+def test_timed_clock_mask_is_active_without_graph():
+    cfg = Config(algo="random", clock_mask=True, clock_mask_timed=True, prune_noeffect=True)
+    ctrl = OnlineController(cfg, seed=0)
+    play_game(LockEnv(seed=7), ctrl, "lock", budget=60)
+    when = ctrl.shaper.clock.when
+    assert (when >= 1).any() and when.max() <= 12
