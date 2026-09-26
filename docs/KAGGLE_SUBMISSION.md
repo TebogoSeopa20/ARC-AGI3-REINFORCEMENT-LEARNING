@@ -1,6 +1,6 @@
 # Kaggle submission and Moodle evidence
 
-Team name: **General** (same members on both tracks). Check entry and team-merger deadlines on Kaggle.
+Team name: **DevRift** (same members on both tracks). Check entry and team-merger deadlines on Kaggle.
 
 ## Code track (ARC Prize 2026 — ARC-AGI-3)
 1. Set `configs/submission.yaml` to inherit the final agent. Budget there is `max_actions_per_game`.
@@ -12,7 +12,7 @@ Team name: **General** (same members on both tracks). Check entry and team-merge
 ## Paper track
 - Condensed write-up < 1500 words: `report/paper_track_writeup.md`. It must describe the linked code submission.
 
-## Evidence for the Moodle ZIP (`General.zip`)
+## Evidence for the Moodle ZIP (`DevRift.zip`)
 - [ ] Report PDF (RLC template, cover page disabled, ≤ 8 pages main content)
 - [ ] Kaggle notebook (downloaded from the nominated submission), credentials removed
 - [ ] Code submission identifier: ____

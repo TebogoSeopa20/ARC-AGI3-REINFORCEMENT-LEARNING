@@ -1,7 +1,7 @@
 # DQN vs PPO on ARC-AGI-3
 
 Wits COMS4061A/COMS7071A Reinforcement Learning assignment (ARC Prize 2026).
-Kaggle team **General** — Tebogo Seopa (2563912), Mandisa Mashinini (2589970), Onkabetse Monamodi (2854004).
+Kaggle team **DevRift** — Tebogo Seopa (2563912), Mandisa Mashinini (2589970), Onkabetse Monamodi (2854004).
 Moodle deadline: 27 October 2026, 23:59 SAST.
 
 **Research question.** Do exploration shaping, short-horizon memory and an abstracted click action
@@ -79,6 +79,10 @@ bash scripts/run_experiments.sh heldout
 
 # Tables + curves -> outputs/figures/{summary.md,summary.tex,curve_*.png}
 python scripts/aggregate.py
+
+# Paired statistics (games as unit) -> outputs/figures/stats_<split>_levels_completed.md
+python scripts/stats.py --split dev
+python scripts/stats.py --split heldout
 ```
 
 Every seed writes `outputs/results/<run>/<split>_seed<k>/games.jsonl` plus `run_meta.json` capturing

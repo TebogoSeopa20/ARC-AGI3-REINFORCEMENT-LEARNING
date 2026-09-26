@@ -1,4 +1,4 @@
-# ARC Prize 2026 Paper Track — Team General (< 1500 words)
+# ARC Prize 2026 Paper Track — Team DevRift (< 1500 words)
 
 Code submission: <Kaggle notebook link> · Full report: <link>
 
