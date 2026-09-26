@@ -26,6 +26,9 @@ Hardware for all rows so far: MacBook Pro, Intel x86_64 CPU, no GPU, torch 2.2.2
 | 25 Sept | random_imp5_graph | random_imp5_graph.yaml | dev | 0,1,2 | 0.236 ± 0.142 | 2.67 ± 1.15 | 1 min | control; graph without learning |
 | 25 Sept | dqn_imp5_graph | dqn_imp5_graph.yaml | dev | 0,1,2 | 0.141 ± 0.154 | 4.67 ± 1.53 | 21 min | 2 × tu93 level 2; determinism 98.6% |
 | 25 Sept | ppo_imp5_graph | ppo_imp5_graph.yaml | dev | 0,1,2 | 0.070 ± 0.075 | 5.00 ± 1.00 | 11 min | 2 × tu93 level 2; determinism 98.6% |
+| 25 Sept | dqn_abl_imp5_no_graph (rerun) | ablations/dqn_imp5_no_graph.yaml | dev | 0,1,2 | 0.142 | 3.00 ± 1.00 | 18 min | valid after fix; no tu93 |
+| 25 Sept | ppo_abl_imp5_no_graph (rerun) | ablations/ppo_imp5_no_graph.yaml | dev | 0,1,2 | 0.014 | 3.67 ± 0.58 | 11 min | valid after fix; no tu93 |
+| 25–26 Sept | 15 versions | see held-out section | heldout | 0,1,2 | see held-out section | | | run once |
 
 Improvement 3 runs (dev_b = cn04, lp85, sk48, su15, tu93; levels out of 5 games' worth; imp1/imp2/baselines pooled from dev runs):
 
@@ -410,8 +413,99 @@ comparing against published ARC-AGI-3 agents, which surfaced a limitation the lo
   `clock_mask_timed` are unaffected (bit-for-bit reproduction re-checked for baseline, imp2 and imp4). The graph path is
   unchanged, so imp5 results stand. Test added (`test_timed_clock_mask_is_active_without_graph`).
 - **What the invalid run still shows:** imp4 is reproducible run to run on the same machine and seeds (all numbers identical).
-- **Rerun:** pending (`--overwrite`).
-- **Result:**
+- **Rerun (25–26 Sept), valid result: the graph, not the timed mask, produces improvement 5's gain.**
+
+  | Run (dev) | Levels (per seed) | tu93 levels (sum over seeds) | Level-2 completions |
+  |---|---|---|---|
+  | dqn_imp4_efficient | 3.00 (4, 2, 3) | 0 | 0 |
+  | dqn_abl_imp5_no_graph (imp4 + timed mask) | 3.00 (3, 2, 4) | 0 | 0 |
+  | dqn_imp5_graph | 4.67 (6, 5, 3) | 4 | 2 |
+  | ppo_imp4_efficient | 4.00 (6, 3, 3) | 2 | 1 |
+  | ppo_abl_imp5_no_graph (imp4 + timed mask) | 3.67 (4, 3, 4) | 0 | 0 |
+  | ppo_imp5_graph | 5.00 (4, 5, 6) | 5 | 2 |
+
+  - The timed mask alone changes the runs (the ablation now differs from imp4 game by game) but not the level count:
+    DQN 3.00 → 3.00, PPO 4.00 → 3.67. It completes no tu93 levels at all, where the graph gives 4 (DQN) and 5 (PPO).
+  - So on dev, improvement 5's gain is attributable to the graph, and specifically to tu93, where return navigation is
+    active (15% of actions).
+
+## Held-out evaluation (25–26 Sept; 10 games never used in development; 3 seeds; run once, nothing tuned after)
+
+Games: ar25, bp35, cd82, dc22, ft09, g50t, lf52, m0r0, tr87, vc33. Levels are summed over the 10 games.
+
+| Run | Levels (per seed) | Games with ≥1 level | Level-2 completions | Distinct frames | Score |
+|---|---|---|---|---|---|
+| random | 0.33 (0, 1, 0) | 0.33 | 0 | 3980 | 0.002 |
+| random_imp4_actions | 1.00 (1, 1, 1) | 1.00 | 0 | 4480 | 0.001 |
+| random_imp5_graph | 1.67 (2, 1, 2) | 1.67 | 0 | 4630 | 0.001 |
+| dqn_baseline / imp1 / imp2 | 0.00 / 0.33 / 0.33 | ≤ 0.33 | 0 | 4199 / 4442 / 4468 | ≤ 0.001 |
+| dqn_imp3_pretrain_final | 0.00 (0, 0, 0) | 0 | 0 | 4003 | 0.000 |
+| **dqn_imp4_efficient** | **3.33 (2, 4, 4)** | **2.33** | **3** | **6110** | **0.094** |
+| dqn_imp5_graph | 2.67 (4, 1, 3) | 2.67 | 0 | 5681 | 0.005 |
+| ppo_baseline / imp1 / imp2 | 0.67 / 0.67 / 0.33 | ≤ 0.67 | 0 | 3828 / 4275 / 4428 | ≤ 0.010 |
+| ppo_imp3_pretrain_final | 0.00 (0, 0, 0) | 0 | 0 | 5127 | 0.000 |
+| ppo_imp4_efficient | 2.00 (4, 1, 1) | 1.67 | 1 | 5794 | 0.003 |
+| ppo_imp5_graph | 2.33 (3, 3, 1) | 2.33 | 0 | 5508 | 0.005 |
+
+- **Improvements 1–3 do not generalise.** Baselines, shaping (imp1, imp2) and pretraining (imp3) complete 0–0.67 levels
+  on held-out games, at or below plain random (0.33). Pretraining on all 15 dev games gave 0 levels for both algorithms
+  (imp2 from scratch: 0.33 each). The dev_b finding (exploration transfers, goals do not) held, and on held-out games
+  even the exploration benefit gave no levels.
+- **Improvement 4 generalises; it is the main held-out result.** DQN imp4 3.33 and PPO imp4 2.00 levels, against 0.33
+  for imp2. Both are above random over the same action abstraction (1.00). DQN imp4 also produced every held-out
+  second level: vc33 (seed 0 at actions 681/713, seed 1 at 385/868) and ar25 (seed 2 at 624/788).
+- **Within-game learning is visible in the second levels.** DQN seed 0 completed vc33 level 2 only 32 actions after
+  level 1 (human baseline 18), against 681 actions for level 1. That single completion produces most of DQN imp4's
+  held-out score (vc33 per-game score 2.26).
+- **Improvement 5 does not generalise beyond improvement 4.** DQN 3.33 → 2.67 (lower), PPO 2.00 → 2.33; neither
+  reached a held-out second level. Its dev gain came from tu93; no held-out game has tu93's combination of few actions
+  and a short life where return navigation pays off. The one held-out game with heavy navigation (g50t, 230 planned
+  steps per game) was never completed by any agent.
+- **Determinism is lower on held-out games:** 87–90% of repeated (state, action) pairs were consistent (98.6% on dev).
+  More inconsistency makes graph edges less reliable, which is consistent with improvement 5's weaker held-out result.
+- **Normalised per game, held-out is not harder than dev overall:** levels per game dev → held-out: DQN imp4 0.20 →
+  0.33, PPO imp4 0.27 → 0.20, DQN imp5 0.31 → 0.27, PPO imp5 0.33 → 0.23, random-with-graph 0.18 → 0.17. The
+  generalisation failure is specific to improvements 1–3 and to improvement 5's extra gain.
+- **Score:** outside vc33 and ar25 second levels, every held-out score is ≤ 0.03. ft09, which appears in the official
+  starter material, was completed by almost every version including random, so it does not separate agents.
+
+## Paired statistics (`scripts/stats.py`, levels per game, games as the unit, seeds averaged)
+
+- **Design limit:** most games are never completed by any agent, so most per-game differences are exact ties. With
+  3–4 non-tied games, the smallest possible two-sided sign-flip p-value is 0.125–0.25. **No comparison can reach
+  p < 0.05 at this scale**, whatever the effect size. Bootstrap CIs over games are reported, but with so many ties
+  they are optimistic. Treat both as descriptive and state this limitation in the report.
+- **Comparisons whose 95% bootstrap CI excludes zero** (mean difference in levels per game [CI], games A>B / A<B / tie):
+  - dev: PPO imp4 vs imp2 +0.156 [0.044, 0.289] 4/0/11; DQN imp4 vs random-imp4-actions +0.111 [0.022, 0.222] 4/0/11;
+    PPO imp4 vs random-imp4-actions +0.178 [0.044, 0.356] 4/0/11; PPO imp4 vs its no-effect ablation +0.133
+    [0.022, 0.267] 4/0/11; DQN imp5 vs random-with-graph +0.133 [0.022, 0.267] 4/0/11.
+  - held-out: DQN imp4 vs imp2 +0.300 [0.067, 0.667] 4/0/6; DQN imp4 vs random-imp4-actions +0.233 [0.067, 0.467] 4/0/6.
+- **Consistent direction, CI touching zero:** DQN/PPO imp5 vs imp4 on dev; PPO imp4 vs imp2 on held-out
+  (+0.167 [0.000, 0.400]); all learner-vs-random-with-graph comparisons on held-out.
+- **No difference:** every improvement 1–3 comparison, on dev and held-out; DQN vs PPO at matched versions.
+
+## Submission decision after held-out (26 Sept): DQN imp4
+Kaggle ranks by the official, efficiency-weighted score on unseen games, so the choice uses all 25 public games
+(dev + held-out) and excludes r11l, where random over the same actions matches the learners by luck.
+
+| Agent | Levels (25 games, per seed) | Level-2 completions | Games solved | Score | Score excl. r11l | Minutes per seed (Mac CPU) |
+|---|---|---|---|---|---|---|
+| **dqn_imp4_efficient** | 6.33 (6, 6, 7) | **3** | 9 | **0.121** | **0.042** | 41 |
+| dqn_imp5_graph | 7.33 (10, 6, 6) | 2 | 11 | 0.086 | 0.006 | 33 |
+| ppo_imp4_efficient | 6.00 (10, 4, 4) | 2 | 8 | 0.017 | 0.010 | 14 |
+| ppo_imp5_graph | 7.33 (7, 8, 7) | 2 | 9 | 0.044 | 0.004 | 16 |
+| random_imp5_graph | 4.33 (6, 3, 4) | 1 | 5 | 0.142 | 0.001 | 2 |
+
+- **Chosen: DQN imp4.** Best score once r11l is excluded, and the best agent on held-out games (the closest analogue of
+  Kaggle's hidden games). The imp5 agents complete about one more level in total, but late, so those levels earn almost
+  no score. DQN imp4's second levels came quickly after the first (vc33 level 2 in 32 actions), which is what the metric
+  rewards. It also does not depend on the determinism assumption, which was weaker on held-out games (87–90%).
+- **Caveats, to be stated in the report:** (1) this replaces the pre-registered dev-only choice (PPO imp5) and was made
+  after seeing held-out results, so DQN imp4's held-out numbers are an optimistic estimate of its performance on new
+  games; (2) its score lead rests on few events: vc33 seed 0 alone contributes about 0.030 of its 0.042, and without it
+  DQN imp4 (≈0.012) is roughly level with PPO imp4 (0.010); (3) DQN is about 2.6× slower than PPO, so the Kaggle rerun's
+  time limit must be checked with the first submission.
+- The pre-registered comparisons in the report (all dev and held-out tables) are unaffected by this choice.
 
 ### Optional, not in the main chain
 Frame-stack memory (`*_opt_memory.yaml`) and object-aware clicks (`*_opt_objclick.yaml`) remain available as extra
