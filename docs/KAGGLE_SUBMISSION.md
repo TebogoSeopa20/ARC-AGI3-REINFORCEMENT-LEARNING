@@ -12,6 +12,15 @@ Team name: **DevRift** (same members on both tracks). Check entry and team-merge
 ## Paper track
 - Condensed write-up < 1500 words: `report/paper_track_writeup.md`. It must describe the linked code submission.
 
+## Submissions made
+| # | Date | Agent | Actions per game | Notebook version | Public score | Submission ID | Run time |
+|---|---|---|---|---|---|---|---|
+| 1 | 26 Sept 2026 | DQN imp4 | 1000 | 3 | 0.12 | ____ | < 4 h (limit 9 h) |
+| 2 | | DQN imp4 | 2000 | | | | |
+
+Local reference for DQN imp4 at 1000 actions: dev 0.138, held-out 0.094 (official arc_agi scorecard).
+Leaderboard leader on 26 Sept: 20.53 (all entrants; not the class leaderboard).
+
 ## Evidence for the Moodle ZIP (`DevRift.zip`)
 - [ ] Report PDF (RLC template, cover page disabled, ≤ 8 pages main content)
 - [ ] Kaggle notebook (downloaded from the nominated submission), credentials removed

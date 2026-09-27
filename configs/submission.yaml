@@ -1,10 +1,9 @@
 # Config baked into the Kaggle notebook by scripts/build_notebook.py.
-# Final choice (26 Sept), made after the held-out evaluation, on all 25 public games (dev + held-out):
-# DQN improvement 4 has the highest efficiency-weighted score once r11l luck is excluded (0.042 vs <= 0.010),
-# the most second-level completions (3), and the best held-out result (3.33 levels). This choice used held-out
-# results, so the held-out numbers are an optimistic estimate for this agent (disclosed in the report).
-# Budget matches the evaluated protocol (1000 actions per game); lower it only if the Kaggle rerun times out.
+# Agent: DQN improvement 4, chosen after the held-out evaluation on all 25 public games (see docs/EXPERIMENT_LOG.md).
+# Submission 1 (26 Sept): 1000 actions per game -> public score 0.12, run finished in under 4 h of the 9 h limit.
+# Submission 2: 2000 actions per game (about 7 h expected). Extra actions cannot lower the score: an unfinished
+# level scores 0 either way, and many completions arrived after action 400.
 inherit: dqn_imp4_efficient.yaml
 run_name: submission
-max_actions_per_game: 1000
+max_actions_per_game: 2000
 seeds: [0]
