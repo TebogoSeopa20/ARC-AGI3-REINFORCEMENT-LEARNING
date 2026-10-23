@@ -1,0 +1,51 @@
+{
+ "frames": [
+  1,
+  402,
+  403,
+  598,
+  599
+ ],
+ "actions": [
+  "ACTION2",
+  "ACTION4",
+  "ACTION2",
+  "ACTION2",
+  "ACTION1"
+ ],
+ "check": {
+  "levels_completed": [
+   2,
+   2
+  ],
+  "level_completed_at": [
+   [
+    403,
+    599
+   ],
+   [
+    403,
+    599
+   ]
+  ],
+  "game_overs": [
+   27,
+   27
+  ]
+ },
+ "repeat_rate": 0.23559670781893005,
+ "top_actions": [
+  [
+   "ACTION4",
+   294
+  ],
+  [
+   "ACTION3",
+   286
+  ],
+  [
+   "ACTION2",
+   217
+  ]
+ ]
+}

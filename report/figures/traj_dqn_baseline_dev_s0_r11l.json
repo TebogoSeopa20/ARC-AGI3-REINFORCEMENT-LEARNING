@@ -1,0 +1,49 @@
+{
+ "frames": [
+  1,
+  48,
+  58,
+  66,
+  75
+ ],
+ "actions": [
+  "ACTION6(4,36)",
+  "ACTION6(4,52)",
+  "ACTION6(52,12)",
+  "ACTION6(60,4)",
+  "ACTION6(36,52)"
+ ],
+ "check": {
+  "levels_completed": [
+   1,
+   1
+  ],
+  "level_completed_at": [
+   [
+    32
+   ],
+   [
+    32
+   ]
+  ],
+  "game_overs": [
+   84,
+   84
+  ]
+ },
+ "repeat_rate": 0.15081967213114755,
+ "top_actions": [
+  [
+   "ACTION6(20,52)",
+   198
+  ],
+  [
+   "ACTION6(12,44)",
+   93
+  ],
+  [
+   "ACTION6(20,36)",
+   54
+  ]
+ ]
+}
