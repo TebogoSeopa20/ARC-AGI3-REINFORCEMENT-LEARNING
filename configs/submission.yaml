@@ -1,9 +1,9 @@
 # Config baked into the Kaggle notebook by scripts/build_notebook.py.
 # Agent: DQN improvement 4, chosen after the held-out evaluation on all 25 public games (see docs/EXPERIMENT_LOG.md).
-# Submission 1 (26 Sept): 1000 actions per game -> public score 0.12, run finished in under 4 h of the 9 h limit.
-# Submission 2: 2000 actions per game (about 7 h expected). Extra actions cannot lower the score: an unfinished
-# level scores 0 either way, and many completions arrived after action 400.
+# Submission 1 (26 Sept, notebook v3): 1000 actions per game, public score 0.12.
+# Submission 2 (notebook v4): 2000 actions per game, public score 0.07.
+# Submission 3: same agent and budget as submission 1, readable notebook layout.
 inherit: dqn_imp4_efficient.yaml
 run_name: submission
-max_actions_per_game: 2000
+max_actions_per_game: 1000
 seeds: [0]
