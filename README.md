@@ -1,115 +1,118 @@
-# DQN vs PPO on ARC-AGI-3
+# Learning to Act Before Knowing the Rules: DQN and PPO on ARC-AGI-3
 
-Wits COMS4061A/COMS7071A Reinforcement Learning assignment (ARC Prize 2026).
-Kaggle team **DevRift** — Tebogo Seopa (2563912), Mandisa Mashinini (2589970), Onkabetse Monamodi (2854004).
-Moodle deadline: 27 October 2026, 23:59 SAST.
+This is our group project for COMS4061A/COMS7071A Reinforcement Learning at Wits, and our entry to ARC Prize 2026
+as team **DevRift**: Tebogo Seopa (2563912), Mandisa Mashinini (2589970) and Onkabetse Monamodi (2854004).
 
-**Research question.** Do exploration shaping, short-horizon memory and an abstracted click action
-space improve a DQN and a PPO agent's interaction efficiency and held-out generalisation on ARC-AGI-3,
-relative to their own baselines and a random policy — and do improvements transfer across the two?
+ARC-AGI-3 drops an agent into games it has never seen, with no instructions. It has to work out the rules and the
+goal by playing. We wanted to know how far two standard reinforcement learners get when they have to learn inside
+each game, from scratch, and what actually helps them.
 
-| Version | DQN config | PPO config | Change |
-|---|---|---|---|
-| Reference | `random.yaml` | `random.yaml` | Uniform over legal abstracted actions |
-| Baseline | `dqn_baseline.yaml` | `ppo_baseline.yaml` | Sparse level reward, 8×8 click grid, single frame |
-| Improvement 1 | `dqn_imp1_explore.yaml` | `ppo_imp1_explore.yaml` | Count-based novelty + frame-change shaping (Bellemare et al., 2016) |
-| Improvement 2 | `dqn_imp2_clockmask.yaml` | `ppo_imp2_clockmask.yaml` | Novelty/change computed with clock-like pixels masked (ClockMask) |
-| Improvement 3 | `dqn_imp3_pretrain.yaml` | `ppo_imp3_pretrain.yaml` | Cross-game pretraining on dev_a, online learning on unseen games (dev_b check; `*_final` = all dev → held-out) |
-| Improvement 4 | `dqn_imp4_efficient.yaml` | `ppo_imp4_efficient.yaml` | Learned action-effect head, no-effect pruning, 16×16 object-aware clicks (on top of imp2) |
-| Improvement 5 | `dqn_imp5_graph.yaml` | `ppo_imp5_graph.yaml` | Return-then-explore over a per-game state graph (Go-Explore style); learner chooses among untried actions |
-| Optional | `dqn_opt_memory.yaml` | `ppo_opt_memory.yaml` | + 4-frame stack (Hausknecht & Stone, 2015) |
-| Optional | `dqn_opt_objclick.yaml` | `ppo_opt_objclick.yaml` | + 16×16 object-aware click cells |
+## What we asked
 
-The improvement order is a hypothesis, not a commitment: the brief requires each step to be motivated
-by the previous stage's evidence. Reorder the configs if baseline failure modes point elsewhere, and log why.
+When DQN (a value-based method from the course) and PPO (a policy-gradient method we learned for this project) must
+learn online inside each unseen game, what holds them back, and which changes to exploration, action selection and
+memory of the game make them more efficient and better at games they were never tuned on?
 
----
+## What we found
 
-## Repository layout
+Both baselines played no better than random. Looking closer, three things were going wrong. In most games no level
+was ever completed, so the agents never saw a single reward. Most clicks landed on empty background. And many games
+have a move counter that changes a few pixels on every action, so every frame looked new to the agent.
+
+We tried five improvements, each one prompted by what the previous version got wrong:
+
+| Version | What we changed | What happened |
+|---|---|---|
+| Baseline | DQN and PPO with a shared CNN, 6 simple actions plus an 8×8 click grid | Same as random play |
+| I1 | Bonuses for reaching new frames and for actions that change the frame | More exploration, no more levels |
+| I2 | ClockMask: learns which pixels act like a move counter and ignores them | Exploration improved where intended, levels within noise |
+| I3 | Pretraining on other games before playing a new one | Exploration transferred, completing levels did not |
+| I4 | An effect head that predicts which actions do something, pruning of actions seen to do nothing, clicks aimed at objects | **The one change that generalised:** held-out levels went from 0.33 to 3.33 (DQN) and 2.00 (PPO) |
+| I5 | A state graph that returns to unexplored states after each game over (Go-Explore style) | Best on development games, but the gain came from one game and did not carry over |
+
+Our Kaggle submission is DQN with I4. It scored 0.12 on the public leaderboard. The full story, with ablations,
+learning curves and replayed games, is in the report (`report/main.tex`).
+
+## How the repository is organised
 
 ```
-agent/my_agent.py        Kaggle submission agent (MyAgent), wraps the online controller
-configs/                 One YAML per evaluated version; ablations/ differ by exactly one component
-scripts/                 Entry points: splits, smoke test, evaluate, pretrain, aggregate, notebook build
+agent/my_agent.py      The agent Kaggle runs (MyAgent), a thin wrapper around our controller
+configs/               One YAML file per version we evaluated; configs/ablations/ remove one component each
 src/arcrl/
-  env/                   Frame processing, action abstraction, Gymnasium adapter, offline toy game
-  models/                CNN with spatial click head (Q-values or policy logits + value)
-  agents/                DQN, PPO, random, reward shaping, online controller
-  evaluation/            Game runner, official scorecard extraction, seed aggregation + plots
-tests/                   CPU-only unit tests (run before every experiment)
-docs/                    Runbook, protocol, game disclosure, experiment log, Kaggle evidence, contributions
-report/                  RLC-template report skeleton, bibliography, Paper Track write-up
-notebooks/               experiments.ipynb (Kaggle T4 runs), kernel metadata, generated submission.ipynb
-outputs/                 results/, checkpoints/, figures/ (results and checkpoints gitignored)
+  env/                 Frame processing and the action abstraction (clicks, object-aware clicks)
+  models/              The shared CNN (Q-values or policy logits, value head, effect head)
+  agents/              DQN, PPO, random policy, reward shaping, ClockMask, state graph, online controller
+  evaluation/          Plays a game under a fixed budget, reads the official score, aggregates results
+scripts/               Everything you run: splits, evaluation, pretraining, statistics, figures, notebook build
+tests/                 24 CPU tests; we ran them before every experiment
+docs/                  Protocol, game list, experiment log, Kaggle evidence and member contributions
+report/                The report (RLC 2026 template), bibliography, figures and Paper Track write-up
+notebooks/             Kaggle notebooks and their metadata
 ```
 
-## Setup
+## Running it
+
+You need Python 3.12. On Intel Macs the last available PyTorch is 2.2, which is what we used.
 
 ```bash
-make setup          # Python 3.12 venv, pip install -e ".[dev]", clones ARC-AGI-3-Agents framework
-make test           # 14 CPU tests
-make smoke-toy      # random/DQN/PPO end-to-end on the offline toy game
-make smoke          # same on a real game (downloads it once into environment_files/)
+make setup        # virtual environment, the package, the Kaggle CLI and the ARC-AGI-3 agent framework
+make test         # unit tests
+make smoke-toy    # random, DQN and PPO end to end on a small offline toy game
+make smoke        # the same on one real game
 ```
 
-With conda on the Intel Mac: `conda create -n arcrl python=3.12 && conda activate arcrl && pip install -e ".[dev]"`,
-then `PYTHON=python make setup` or run the scripts directly. The Intel Mac pins torch 2.2 (last x86_64 macOS wheel);
-full runs go on Kaggle T4.
+### Reproducing the experiments
 
-## Experiment pipeline
-
-See `docs/RUNBOOK.md` for which phase runs where (Mac vs Kaggle) and who runs what.
+The development/held-out split was fixed once, before any improvement, and is stored in `configs/splits.yaml`.
+Everything was designed on the 15 development games; the 10 held-out games were only run once per version at the end.
 
 ```bash
-# Phase 1 — freeze the protocol (once)
-python scripts/list_games.py
-python scripts/make_splits.py              # writes configs/splits.yaml; commit it, never change it
-
-# Phase 2 — baselines + reference, 3 seeds each, dev split
 python scripts/evaluate.py --config configs/random.yaml
 python scripts/evaluate.py --config configs/dqn_baseline.yaml
 python scripts/evaluate.py --config configs/ppo_baseline.yaml
-
-# Phases 3–4 — improvements and ablations
 bash scripts/run_experiments.sh dev
 bash scripts/run_ablations.sh dev
-
-# Held-out generalisation — final configs only, run once
-bash scripts/run_experiments.sh heldout
-
-# Tables + curves -> outputs/figures/{summary.md,summary.tex,curve_*.png}
+bash scripts/run_imp3.sh
+bash scripts/run_imp4.sh
+bash scripts/run_imp5.sh
+bash scripts/run_heldout.sh
 python scripts/aggregate.py
-
-# Paired statistics (games as unit) -> outputs/figures/stats_<split>_levels_completed.md
 python scripts/stats.py --split dev
 python scripts/stats.py --split heldout
+python scripts/report_figures.py
 ```
 
-Every seed writes `outputs/results/<run>/<split>_seed<k>/games.jsonl` plus `run_meta.json` capturing
-config, git commit, package versions, hardware and scorecard id. Log each run in `docs/EXPERIMENT_LOG.md`.
+Each run uses 1000 actions per game and seeds 0, 1 and 2. Every seed writes its results and a `run_meta.json`
+(config, git commit, package versions, hardware) under `outputs/results/`. On our 2016 MacBook one seed over the
+development games took about 1 minute for random play, 21 to 29 minutes for DQN and 8 to 11 minutes for PPO.
+Runs are deterministic on the same machine, so re-running reproduces the logged numbers exactly.
+`docs/EXPERIMENT_LOG.md` records every run and every decision we made along the way, including the ones that
+did not work.
 
-## Kaggle submission
+To replay a logged run and see what the agent actually did:
 
 ```bash
-mkdir -p .kaggle && echo "KGAT_..." > .kaggle/access_token && chmod 600 .kaggle/access_token
-# point configs/submission.yaml at the final agent, then:
-make play-local GAME=ls20     # same agent, through the framework loop
-make submit                   # builds notebooks/submission.ipynb and pushes it
+python scripts/trajectories.py --config configs/dqn_imp4_efficient.yaml --split heldout --seed 0 --game vc33 --mode levels
 ```
 
-Then click **Submit to Competition** on the kernel page. See `docs/KAGGLE_SUBMISSION.md` for the
-evidence the Moodle ZIP must contain.
+### Submitting to Kaggle
 
-## Design notes
+```bash
+make play-local GAME=ls20   # runs the submission agent through the official framework locally
+make submit                 # builds notebooks/submission.ipynb and pushes it to Kaggle
+```
 
-- **Online learning.** Evaluation games are unseen, so each agent learns during play. Weights, replay/rollout
-  and novelty counts persist across levels and GAME_OVER resets within a game and are reset between games.
-  `scripts/pretrain.py` provides optional offline pretraining on dev games only (`init_checkpoint`).
-- **No Stable-Baselines3.** SB3 owns the environment loop; the Kaggle framework calls `choose_action()` one
-  step at a time. The learners are plain PyTorch so the same code runs locally and on Kaggle.
-  `src/arcrl/env/arc_env.py` still provides a documented Gymnasium adapter.
-- **Scores.** Reported ARC-AGI-3 scores come only from `arc_agi`'s scorecard. Shaped training return is
-  logged separately as `shaped_return` and never presented as the score.
-- **Reuse.** Kaggle plumbing (`build_notebook.py`, `play_local.py`, `slim_framework.py`, Makefile targets)
-  is adapted from arcprize/ARC-AGI-3-Kaggle-Starter; the starter's per-game action branch was removed.
-  All agent, learner, shaping and evaluation code is ours.
+Then press **Submit to Competition** on the notebook page. You need your own Kaggle token in
+`.kaggle/access_token`; it is git-ignored and never ends up in the notebook.
+
+## A few design choices worth knowing
+
+- **The agents learn while they play.** Weights, replay memory and visit counts carry over between levels and lives
+  within a game, and are reset when a new game starts. Nothing game-specific is hard-coded.
+- **Shaped rewards are for training only.** Every score we report comes from the official `arc-agi` scorecard,
+  never from our shaped training reward.
+- **Plain PyTorch, no Stable-Baselines3.** The Kaggle framework asks for one action at a time, so we wrote the
+  learners to work step by step, and the same code runs locally and on Kaggle.
+- **What we reused.** The game engine, scorecard and agent framework come from the ARC Prize Foundation and are used
+  unchanged. The Kaggle notebook build and local-play scripts are adapted from the official Kaggle starter, with its
+  per-game action branch removed. The learners, improvements, evaluation and analysis were written for this project.
